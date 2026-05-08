@@ -5,7 +5,7 @@
     "buildCommand": "npm install && npx prisma generate && npm run build"
   },
   "deploy": {
-    "startCommand": "npx prisma migrate deploy && echo '=== STARTING NODE ===' && ls dist/main.js && node dist/main 2>&1",
+    "startCommand": "npx prisma migrate deploy; echo \"MIGRATE_EXIT=$?\"; echo \"=== STARTING NODE ===\"; ls dist/ 2>&1; node dist/main 2>&1",
     "healthcheckPath": "/api/v1/health",
     "healthcheckTimeout": 300,
     "restartPolicyType": "ON_FAILURE",
