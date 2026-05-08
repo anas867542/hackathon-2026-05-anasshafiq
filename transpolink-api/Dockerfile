@@ -22,6 +22,9 @@ ENV NODE_ENV=production
 COPY --from=deps /app/node_modules ./node_modules
 # Override the Prisma generated client with the one built in the builder stage
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
+# Prisma CLI + engines (needed at runtime for `prisma migrate deploy`)
+COPY --from=builder /app/node_modules/prisma ./node_modules/prisma
+COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
 # Compiled NestJS output
 COPY --from=builder /app/dist ./dist
 # Prisma schema needed for prisma migrate deploy
@@ -37,4 +40,4 @@ EXPOSE 4000
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
   CMD wget -qO- http://localhost:4000/api/v1/health || exit 1
 
-CMD ["node", "dist/main"]
+CMD ["sh", "-c", "npx prisma migrate deploy && node dist/main"]
