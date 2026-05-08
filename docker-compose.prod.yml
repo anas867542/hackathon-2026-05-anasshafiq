@@ -1,0 +1,57 @@
+version: '3.9'
+
+# Production deployment stack.
+# Database is expected to be a managed external service (RDS, Supabase, etc.)
+# Secrets come from .env.production files — never commit these.
+#
+# Usage:
+#   docker compose -f docker-compose.prod.yml up -d
+
+services:
+
+  # One-shot migration runner — exits 0 on success, 1 on failure.
+  # The api service will not start until this completes successfully.
+  migrate:
+    build:
+      context: ./transpolink-api
+      target: builder
+    command: npx prisma migrate deploy
+    env_file:
+      - ./transpolink-api/.env.production
+    restart: 'no'
+
+  api:
+    build:
+      context: ./transpolink-api
+      target: runner
+    restart: unless-stopped
+    env_file:
+      - ./transpolink-api/.env.production
+    ports:
+      - '4000:4000'
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ['CMD-SHELL', 'wget -qO- http://localhost:4000/api/v1/health || exit 1']
+      interval: 30s
+      timeout: 10s
+      start_period: 40s
+      retries: 3
+
+  web:
+    build:
+      context: ./transpolink-web
+      target: runner
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
+        NEXT_PUBLIC_API_WS_URL: ${NEXT_PUBLIC_API_WS_URL}
+        NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: ${NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}
+    restart: unless-stopped
+    env_file:
+      - ./transpolink-web/.env.production
+    ports:
+      - '3000:3000'
+    depends_on:
+      api:
+        condition: service_healthy

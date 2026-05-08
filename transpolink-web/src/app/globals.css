@@ -1,0 +1,90 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  html, body {
+    background-color: #f8fafc;
+    color: #111827;
+    font-family: var(--font-inter, system-ui), -apple-system, BlinkMacSystemFont, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  *::selection {
+    background-color: #0d9488;
+    color: #ffffff;
+  }
+
+  ::-webkit-scrollbar        { width: 5px; height: 5px; }
+  ::-webkit-scrollbar-track  { background: transparent; }
+  ::-webkit-scrollbar-thumb  { background: #d1d5db; border-radius: 99px; }
+  ::-webkit-scrollbar-thumb:hover { background: #9ca3af; }
+}
+
+@layer components {
+  .container-page {
+    @apply mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8;
+  }
+
+  .skeleton {
+    @apply relative overflow-hidden rounded-2xl bg-gray-100;
+  }
+  .skeleton::after {
+    content: '';
+    @apply absolute inset-0;
+    background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.85) 50%, transparent 100%);
+    animation: shimmer 1.5s ease-in-out infinite;
+  }
+
+  /* Glassmorphism overlay for map elements */
+  .glass {
+    @apply bg-white/90 backdrop-blur-md;
+  }
+
+  /* Pill chip — compact label */
+  .chip {
+    @apply inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium;
+  }
+}
+
+@layer utilities {
+  .animate-fade-in   { animation: fade-in 0.2s ease-out both; }
+  .animate-slide-up  { animation: slide-up 0.3s cubic-bezier(0.32,0.72,0,1) both; }
+  .animate-slide-down{ animation: slide-down 0.25s cubic-bezier(0.32,0.72,0,1) both; }
+  .animate-scale-in  { animation: scale-in 0.2s cubic-bezier(0.34,1.56,0.64,1) both; }
+
+  /* Safe-area bottom padding for iOS */
+  .pb-safe  { padding-bottom: max(env(safe-area-inset-bottom), 0px); }
+  .mb-safe  { margin-bottom: max(env(safe-area-inset-bottom), 0px); }
+}
+
+@keyframes shimmer {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+@keyframes fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes slide-up {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes slide-down {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes scale-in {
+  from { opacity: 0; transform: scale(0.94); }
+  to   { opacity: 1; transform: scale(1); }
+}
+@keyframes pulse-ring {
+  0%   { transform: scale(1); opacity: 0.7; }
+  100% { transform: scale(1.8); opacity: 0; }
+}

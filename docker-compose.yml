@@ -1,0 +1,65 @@
+version: '3.9'
+
+# Local development stack — starts Postgres, runs the API and web in watch mode.
+# Usage:
+#   docker compose up           — start everything
+#   docker compose up db        — start only the database (then run API/web locally)
+#   docker compose down -v      — stop everything and wipe the database volume
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: transpolink
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - '5432:5432'
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres -d transpolink']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: ./transpolink-api
+      target: builder
+    command: npm run start:dev
+    environment:
+      NODE_ENV: development
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/transpolink?schema=public
+      PORT: 4000
+      CORS_ORIGIN: http://localhost:3000
+      JWT_ACCESS_SECRET: dev-access-secret-min-32-chars-aaaaaaaaaaa
+      JWT_REFRESH_SECRET: dev-refresh-secret-min-32-chars-bbbbbbbbbbb
+      BCRYPT_ROUNDS: 10
+    ports:
+      - '4000:4000'
+    volumes:
+      - ./transpolink-api/src:/app/src:ro
+    depends_on:
+      db:
+        condition: service_healthy
+
+  web:
+    build:
+      context: ./transpolink-web
+      target: builder
+    command: npm run dev
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:4000/api/v1
+      NEXT_PUBLIC_API_WS_URL: http://localhost:4000
+      NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: ${NEXT_PUBLIC_GOOGLE_MAPS_API_KEY:-}
+    ports:
+      - '3000:3000'
+    volumes:
+      - ./transpolink-web/src:/app/src:ro
+    depends_on:
+      - api
+
+volumes:
+  pgdata:
