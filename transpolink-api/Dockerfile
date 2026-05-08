@@ -18,6 +18,9 @@ FROM node:20-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV=production
 
+# OpenSSL required by Prisma on Alpine
+RUN apk add --no-cache openssl
+
 # Production node_modules from the deps stage
 COPY --from=deps /app/node_modules ./node_modules
 # Override the Prisma generated client with the one built in the builder stage
@@ -31,8 +34,9 @@ COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/prisma ./prisma
 COPY package.json ./
 
-# Run as non-root
-RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+# Run as non-root — chown first so the user can write if Prisma needs to
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup \
+  && chown -R appuser:appgroup /app
 USER appuser
 
 EXPOSE 4000
