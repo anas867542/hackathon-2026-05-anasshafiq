@@ -73,10 +73,14 @@ const processLogger = new Logger('Process');
 
 process.on('unhandledRejection', (reason) => {
   processLogger.error('unhandledRejection', reason instanceof Error ? reason.stack : String(reason));
+  process.exit(1);
 });
 process.on('uncaughtException', (err) => {
   processLogger.error('uncaughtException', err instanceof Error ? err.stack : String(err));
   process.exit(1);
 });
 
-bootstrap();
+bootstrap().catch((err) => {
+  console.error('Bootstrap failed:', err);
+  process.exit(1);
+});
