@@ -88,12 +88,15 @@ enum PaymentStatus {
 model User {
   id            String     @id @default(uuid()) @db.Uuid
   email         String     @unique
-  phone         String     @unique
-  passwordHash  String     @map("password_hash")
+  phone         String?    @unique
+  passwordHash  String?    @map("password_hash")
   fullName      String     @map("full_name")
   role          UserRole
   status        UserStatus @default(pending)
   avatarUrl     String?    @map("avatar_url")
+  googleId      String?    @unique @map("google_id")
+  authProvider  String     @default("local") @map("auth_provider")
+  profileImage  String?    @map("profile_image")
   emailVerifiedAt DateTime? @map("email_verified_at")
   phoneVerifiedAt DateTime? @map("phone_verified_at")
   lastLoginAt   DateTime?  @map("last_login_at")

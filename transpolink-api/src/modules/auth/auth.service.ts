@@ -11,6 +11,7 @@ import * as crypto from 'crypto';
 import { PrismaService } from '../../prisma/prisma.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
+import { GoogleProfile } from './strategies/google.strategy';
 
 /** bcrypt hash of "dummy-password" at rounds=12 — used for constant-time comparison when email not found */
 const DUMMY_HASH = '$2b$12$KIXeUuotzHuRlSo1LnWLs.WqiGKyXfL.IcxL4LpVGopnF2lhBuvvO';
@@ -135,6 +136,61 @@ export class AuthService {
       record.user.role,
       record.user.driver?.id ?? null,
     );
+  }
+
+  async googleAuth(profile: GoogleProfile) {
+    const role = (Object.values(UserRole).includes(profile.role as UserRole)
+      ? profile.role
+      : UserRole.customer) as UserRole;
+
+    // Try to find existing user by googleId or email
+    let user = await this.prisma.user.findFirst({
+      where: { OR: [{ googleId: profile.googleId }, { email: profile.email }] },
+      include: { driver: { select: { id: true } } },
+    });
+
+    if (user) {
+      // Link Google account if not already linked
+      if (!user.googleId) {
+        user = await this.prisma.user.update({
+          where: { id: user.id },
+          data: {
+            googleId: profile.googleId,
+            authProvider: 'google',
+            profileImage: profile.profileImage ?? user.profileImage,
+            status: UserStatus.active,
+            lastLoginAt: new Date(),
+          },
+          include: { driver: { select: { id: true } } },
+        });
+      } else {
+        await this.prisma.user.update({
+          where: { id: user.id },
+          data: { lastLoginAt: new Date() },
+        });
+      }
+    } else {
+      // Create new user via Google
+      user = await this.prisma.user.create({
+        data: {
+          email: profile.email,
+          fullName: profile.fullName,
+          googleId: profile.googleId,
+          authProvider: 'google',
+          profileImage: profile.profileImage,
+          role,
+          status: UserStatus.active,
+          emailVerifiedAt: new Date(),
+          driver:
+            role === UserRole.driver
+              ? { create: { licenseNumber: `GOOGLE-${profile.googleId}`, licenseExpiry: new Date('2099-12-31') } }
+              : undefined,
+        },
+        include: { driver: { select: { id: true } } },
+      });
+    }
+
+    return this.issueTokens(user.id, user.email, user.role, user.driver?.id ?? null);
   }
 
   async logout(userId: string) {

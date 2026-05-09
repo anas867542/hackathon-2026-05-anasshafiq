@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
+import { GoogleButton } from '@/components/auth/GoogleButton';
 import { useAuth } from '@/hooks/useAuth';
 import { ApiError } from '@/lib/api/client';
 import { cn } from '@/lib/utils';
@@ -98,6 +99,14 @@ function RegisterForm() {
             {role === 'driver' ? 'Sign up & start onboarding' : 'Create account'}
           </Button>
         </form>
+
+        <div className="my-5 flex items-center gap-3">
+          <div className="h-px flex-1 bg-gray-100" />
+          <span className="text-xs text-gray-400">or</span>
+          <div className="h-px flex-1 bg-gray-100" />
+        </div>
+
+        <GoogleButton role={role} label={`Continue with Google as ${role === 'driver' ? 'driver' : 'customer'}`} />
 
         <p className="mt-6 text-center text-sm text-gray-500">
           Already have an account?{' '}
