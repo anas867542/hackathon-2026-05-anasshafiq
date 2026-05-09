@@ -54,9 +54,17 @@ export default function DriverDashboardPage() {
   // WebSocket event was missed (e.g., driver connected after booking was dispatched).
   useEffect(() => {
     if (!profile || profile.status !== 'online' || !token) return;
-    const fetch = () => bookingsApi.getAvailable().then(mergeItems).catch(() => undefined);
-    fetch();
-    const id = window.setInterval(fetch, 30_000);
+    const fetchAvailable = () =>
+      bookingsApi.getAvailable()
+        .then((items) => {
+          // Drop items that expire within 10 s — network latency could make them
+          // flash then immediately disappear via the sweep timer.
+          const cutoff = Date.now() + 10_000;
+          mergeItems(items.filter((item) => new Date(item.expiresAt).getTime() > cutoff));
+        })
+        .catch(() => undefined);
+    fetchAvailable();
+    const id = window.setInterval(fetchAvailable, 30_000);
     return () => window.clearInterval(id);
   }, [profile?.status, token]); // eslint-disable-line react-hooks/exhaustive-deps
 

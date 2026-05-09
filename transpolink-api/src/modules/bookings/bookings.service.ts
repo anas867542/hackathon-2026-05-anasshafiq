@@ -85,7 +85,11 @@ export class BookingsService {
     return booking;
   }
 
-  private async dispatchToNearbyDrivers(booking: Booking, customerName: string) {
+  private async dispatchToNearbyDrivers(
+    booking: Booking,
+    customerName: string,
+    scheduleRedispatch = true,
+  ) {
     if (booking.bookingType === BookingType.scheduled) return; // dispatch later via cron
 
     const candidates = await this.matching.findCandidates(
@@ -137,6 +141,40 @@ export class BookingsService {
     this.logger.log(
       `Booking ${booking.referenceCode} dispatched to ${candidates.length} drivers`,
     );
+
+    // Auto re-dispatch once if no driver accepts within the TTL window
+    if (scheduleRedispatch) {
+      setTimeout(
+        () =>
+          this.redispatchIfStillPending(booking.id).catch((e) =>
+            this.logger.error(`Re-dispatch failed for ${booking.referenceCode}`, e),
+          ),
+        REQUEST_TTL_SECONDS * 1000,
+      );
+    }
+  }
+
+  private async redispatchIfStillPending(bookingId: string) {
+    const booking = await this.prisma.booking.findUnique({
+      where: { id: bookingId },
+      include: { customer: { select: { fullName: true } } },
+    });
+    if (!booking || booking.status !== BookingStatus.pending) return;
+
+    // Bump updatedAt so getAvailableForDriver REST poll picks up a fresh TTL window
+    await this.prisma.booking.update({
+      where: { id: bookingId },
+      data: { updatedAt: new Date() },
+    });
+
+    this.logger.log(`Re-dispatching ${booking.referenceCode} — no acceptance within TTL`);
+    this.tracking.notifyUser(booking.customerId, 'booking:searching', {
+      bookingId,
+      message: 'Still searching for a driver near you…',
+    });
+
+    // scheduleRedispatch=false prevents infinite loops
+    await this.dispatchToNearbyDrivers(booking, booking.customer.fullName, false);
   }
 
   // ============================================================
@@ -152,17 +190,19 @@ export class BookingsService {
     const truckTypes = driver.trucks.map((t) => t.type);
     if (truckTypes.length === 0) return [];
 
-    const since = new Date(Date.now() - 5 * 60 * 1000);
+    // Only return bookings with at least 60 s of TTL remaining.
+    // Filter on updatedAt (not createdAt) so re-dispatched bookings get a fresh window.
+    const since = new Date(Date.now() - (REQUEST_TTL_SECONDS - 60) * 1000);
 
     const bookings = await this.prisma.booking.findMany({
       where: {
         status: BookingStatus.pending,
         bookingType: { not: BookingType.scheduled },
         vehicleType: { in: truckTypes },
-        createdAt: { gte: since },
+        updatedAt: { gte: since },
       },
       include: { customer: { select: { fullName: true } } },
-      orderBy: { createdAt: 'desc' },
+      orderBy: { updatedAt: 'desc' },
       take: 20,
     });
 
@@ -184,7 +224,8 @@ export class BookingsService {
         goodsDescription: b.goodsDescription ?? null,
         estimatedWeightKg: b.estimatedWeightKg ?? null,
         customerName: b.customer.fullName,
-        expiresAt: new Date(b.createdAt.getTime() + 5 * 60 * 1000).toISOString(),
+        // expiresAt based on updatedAt so re-dispatched bookings show a fresh countdown
+        expiresAt: new Date(b.updatedAt.getTime() + REQUEST_TTL_SECONDS * 1000).toISOString(),
       }));
   }
 
