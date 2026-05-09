@@ -21,12 +21,13 @@ export default function DriverDashboardPage() {
   const { hydrated } = useAuth();
   const token = hydrated ? session.getAccessToken() : null;
 
-  const [profile,   setProfile]   = useState<DriverProfile | null>(null);
-  const [active,    setActive]    = useState<Booking | null>(null);
-  const [error,     setError]     = useState<string | null>(null);
-  const [busy,      setBusy]      = useState(false);
-  const [locating,  setLocating]  = useState(false);
-  const [bidTarget, setBidTarget] = useState<InboxItem | null>(null);
+  const [profile,       setProfile]       = useState<DriverProfile | null>(null);
+  const [active,        setActive]        = useState<Booking | null>(null);
+  const [error,         setError]         = useState<string | null>(null);
+  const [busy,          setBusy]          = useState(false);
+  const [locating,      setLocating]      = useState(false);
+  const [bidTarget,     setBidTarget]     = useState<InboxItem | null>(null);
+  const [locationLabel, setLocationLabel] = useState<string | null>(null);
 
   const [now, setNow] = useState(Date.now());
   useEffect(() => {
@@ -48,6 +49,23 @@ export default function DriverDashboardPage() {
       setActive(res.items.find((b) => ['accepted', 'arrived', 'in_progress'].includes(b.status)) ?? null),
     );
   }, []);
+
+  // Reverse-geocode the driver's current coordinates into a readable address
+  useEffect(() => {
+    const lat = profile?.currentLat != null ? Number(profile.currentLat) : null;
+    const lng = profile?.currentLng != null ? Number(profile.currentLng) : null;
+    if (lat == null || lng == null) { setLocationLabel(null); return; }
+    let cancelled = false;
+    fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`, {
+      headers: { 'Accept-Language': 'en' },
+    })
+      .then((r) => r.json())
+      .then((d: { display_name?: string }) => {
+        if (!cancelled) setLocationLabel(d.display_name ?? `${lat.toFixed(4)}, ${lng.toFixed(4)}`);
+      })
+      .catch(() => { if (!cancelled) setLocationLabel(`${lat.toFixed(4)}, ${lng.toFixed(4)}`); });
+    return () => { cancelled = true; };
+  }, [profile?.currentLat, profile?.currentLng]);
 
   async function toggleOnline() {
     if (!profile) return;
@@ -182,14 +200,17 @@ export default function DriverDashboardPage() {
 
           {/* Location status */}
           {isOnline && profile?.currentLat != null && (
-            <div className="mt-3 flex items-center justify-between">
-              <p className="text-xs text-brand-200">
-                📍 {Number(profile.currentLat).toFixed(4)}, {Number(profile.currentLng).toFixed(4)}
+            <div className="mt-3 flex items-start justify-between gap-3">
+              <p className="text-xs text-brand-200 flex items-start gap-1.5 min-w-0">
+                <span className="shrink-0 mt-px">📍</span>
+                <span className="truncate">
+                  {locationLabel ?? `${Number(profile.currentLat).toFixed(4)}, ${Number(profile.currentLng).toFixed(4)}`}
+                </span>
               </p>
               <button
                 onClick={refreshLocation}
                 disabled={locating || busy}
-                className="text-xs text-brand-200 hover:text-white underline underline-offset-2 disabled:opacity-50 transition-colors"
+                className="shrink-0 text-xs text-brand-200 hover:text-white underline underline-offset-2 disabled:opacity-50 transition-colors"
               >
                 {locating ? 'Updating…' : 'Refresh location'}
               </button>
