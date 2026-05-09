@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { useTheme } from 'next-themes';
 import { useAuth } from '@/hooks/useAuth';
 
@@ -96,12 +97,20 @@ export function DashboardHeader({ title }: { title?: string }) {
 
           {profileOpen && (
             <div className="absolute right-0 top-11 z-50 w-44 rounded-2xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-floating py-1.5">
-              <button className="flex w-full items-center gap-2.5 px-4 py-2.5 text-xs text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+              <Link
+                href="/admin/profile"
+                onClick={() => setProfileOpen(false)}
+                className="flex w-full items-center gap-2.5 px-4 py-2.5 text-xs text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+              >
                 <span>👤</span> Profile
-              </button>
-              <button className="flex w-full items-center gap-2.5 px-4 py-2.5 text-xs text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+              </Link>
+              <Link
+                href="/admin/settings"
+                onClick={() => setProfileOpen(false)}
+                className="flex w-full items-center gap-2.5 px-4 py-2.5 text-xs text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+              >
                 <span>⚙️</span> Settings
-              </button>
+              </Link>
               <div className="my-1 border-t border-gray-100 dark:border-gray-800" />
               <button
                 onClick={logout}
