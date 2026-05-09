@@ -35,6 +35,7 @@ export default function CustomerTrackingPage() {
 
   const [booking,    setBooking]    = useState<Booking | null>(null);
   const [loadError,  setLoadError]  = useState<string | null>(null);
+  const [cancelling, setCancelling] = useState(false);
   const [showRating, setShowRating] = useState(false);
 
   useEffect(() => {
@@ -103,10 +104,17 @@ export default function CustomerTrackingPage() {
   );
 
   async function cancel() {
-    if (!booking) return;
+    if (!booking || cancelling) return;
     if (!confirm('Cancel this booking?')) return;
-    const updated = await bookingsApi.cancel(booking.id, 'Cancelled by customer');
-    setBooking(updated);
+    setCancelling(true);
+    try {
+      const updated = await bookingsApi.cancel(booking.id, 'Cancelled by customer');
+      setBooking(updated);
+    } catch (e) {
+      setLoadError(e instanceof Error ? e.message : 'Failed to cancel booking.');
+    } finally {
+      setCancelling(false);
+    }
   }
 
   const displayDriver = booking?.driver ?? (matchedDriver ? {
@@ -288,7 +296,7 @@ export default function CustomerTrackingPage() {
                   </div>
 
                   {['pending', 'accepted'].includes(booking.status) && (
-                    <Button variant="danger" size="sm" className="mt-2 w-full" onClick={cancel}>
+                    <Button variant="danger" size="sm" className="mt-2 w-full" isLoading={cancelling} onClick={cancel}>
                       Cancel booking
                     </Button>
                   )}

@@ -23,6 +23,8 @@ const baseUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000/api/v1
 // ─────────────────────────────────────────────────────────────
 let refreshInFlight: Promise<string | null> | null = null;
 let refreshBlocked = false;
+let refreshBlockedAt = 0;
+const REFRESH_BLOCK_TTL_MS = 5 * 60 * 1000; // auto-unblock after 5 minutes
 
 async function refreshAccessToken(): Promise<string | null> {
   if (refreshInFlight) return refreshInFlight;
@@ -87,15 +89,17 @@ export async function api<T = unknown>(path: string, opts: RequestOptions = {}):
 
   // 401 → try a single refresh + retry the original request
   if (res.status === 401 && !_retried && !path.startsWith('/auth/')) {
-    if (refreshBlocked) {
+    if (refreshBlocked && Date.now() - refreshBlockedAt < REFRESH_BLOCK_TTL_MS) {
       throw new ApiError(401, 'Session expired. Please sign in again.');
     }
+    refreshBlocked = false; // TTL expired — allow one more attempt
     const newToken = await refreshAccessToken();
     if (newToken) {
       return api<T>(path, { ...opts, _retried: true });
     }
-    // Refresh failed — block further attempts, kill local session, redirect
+    // Refresh failed — block further attempts for TTL, kill local session, redirect
     refreshBlocked = true;
+    refreshBlockedAt = Date.now();
     session.clear();
     redirectToLogin();
     throw new ApiError(401, 'Session expired. Please sign in again.');

@@ -4,7 +4,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
+import { BookingStatus, Prisma } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { AuthUser } from '../../common/decorators/current-user.decorator';
 import { CreateReviewDto } from './dto/create-review.dto';
@@ -19,7 +19,7 @@ export class ReviewsService {
       select: { id: true, status: true, customerId: true, driverId: true },
     });
     if (!booking) throw new NotFoundException('Booking not found');
-    if (booking.status !== 'completed') {
+    if (booking.status !== BookingStatus.completed) {
       throw new BadRequestException('You can only review a completed booking');
     }
 
