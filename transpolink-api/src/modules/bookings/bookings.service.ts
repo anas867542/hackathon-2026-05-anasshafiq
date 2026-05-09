@@ -27,7 +27,7 @@ const BASE_FARE = 200; // PKR
 const PER_KM = 80;
 const PER_MIN = 5;
 const SEARCH_RADIUS_KM = 5;
-const REQUEST_TTL_SECONDS = 60;
+const REQUEST_TTL_SECONDS = 300;
 
 @Injectable()
 export class BookingsService {

@@ -349,8 +349,8 @@ export default function DriverDashboardPage() {
               <ul className="space-y-3">
                 {inbox.map((o) => {
                   const expiresMs   = new Date(o.expiresAt).getTime();
-                  // TTL matches REQUEST_TTL_SECONDS=60 on the backend; cap at 60 s display window
-                  const totalMs     = 60_000;
+                  // TTL matches REQUEST_TTL_SECONDS=300 on the backend; cap at 300 s display window
+                  const totalMs     = 300_000;
                   const remainingMs = Math.max(0, expiresMs - now);
                   const secondsLeft = Math.ceil(remainingMs / 1000);
                   const pct         = Math.min(100, (remainingMs / totalMs) * 100);

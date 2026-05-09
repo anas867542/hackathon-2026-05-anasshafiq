@@ -118,9 +118,12 @@ export class TrackingGateway
       client.data.driverId = user.driver?.id ?? null;
 
       client.join(`user:${user.id}`);
-      if (client.data.driverId) client.join(`driver:${client.data.driverId}`);
-
-      this.logger.log(`Connected ${user.id} (${user.role})  socket=${client.id}`);
+      if (client.data.driverId) {
+        client.join(`driver:${client.data.driverId}`);
+        this.logger.log(`Connected ${user.id} (${user.role})  socket=${client.id}  joined driver:${client.data.driverId}`);
+      } else {
+        this.logger.log(`Connected ${user.id} (${user.role})  socket=${client.id}  driverId=null — no driver room joined`);
+      }
     } catch (e) {
       this.logger.warn(`Reject connection: ${(e as Error).message}`);
       client.disconnect(true);
@@ -279,6 +282,24 @@ export class TrackingGateway
 
   notifyDrivers<T>(driverIds: string[], event: string, payload: T) {
     if (driverIds.length === 0) return;
+    driverIds.forEach(async (id) => {
+      const room = `driver:${id}`;
+      const sockets = await this.server.in(room).fetchSockets();
+      this.logger.log(`Emitting ${event} to room ${room} — ${sockets.length} socket(s) connected`);
+    });
     this.server.to(driverIds.map((id) => `driver:${id}`)).emit(event, payload);
+  }
+
+  /**
+   * Force-join all sockets currently in user:{userId} room into driver:{driverId} room.
+   * Called when a driver goes online via REST so that even if the initial WebSocket
+   * connection happened before the driver profile existed, the room join is corrected.
+   */
+  async ensureDriverInRoom(userId: string, driverId: string) {
+    const sockets = await this.server.in(`user:${userId}`).fetchSockets();
+    this.logger.log(`ensureDriverInRoom: user=${userId} driverId=${driverId} sockets=${sockets.length}`);
+    for (const s of sockets) {
+      await s.join(`driver:${driverId}`);
+    }
   }
 }

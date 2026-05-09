@@ -54,7 +54,7 @@ export class DriversController {
   @Patch('me/availability')
   setAvailability(@CurrentUser() user: AuthUser, @Body() dto: UpdateAvailabilityDto) {
     if (!user.driverId) throw new ForbiddenException('Driver profile not set up');
-    return this.drivers.setAvailability(user.driverId, dto);
+    return this.drivers.setAvailability(user.id, user.driverId, dto);
   }
 
   @Roles(UserRole.driver)

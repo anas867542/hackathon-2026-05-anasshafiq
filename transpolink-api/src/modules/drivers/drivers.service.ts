@@ -1,6 +1,7 @@
 import { ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { DriverStatus, Prisma } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
+import { TrackingGateway } from '../tracking/tracking.gateway';
 import { UpdateAvailabilityDto } from './dto/update-availability.dto';
 import { UpdateLocationDto } from './dto/update-location.dto';
 import { FindNearbyDto } from './dto/find-nearby.dto';
@@ -8,7 +9,10 @@ import { DriverOnboardingDto } from './dto/onboarding.dto';
 
 @Injectable()
 export class DriversService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private tracking: TrackingGateway,
+  ) {}
 
   /**
    * Driver onboarding — upserts the Driver row tied to the authenticated user.
@@ -78,8 +82,8 @@ export class DriversService {
     return driver;
   }
 
-  async setAvailability(driverId: string, dto: UpdateAvailabilityDto) {
-    return this.prisma.driver.update({
+  async setAvailability(userId: string, driverId: string, dto: UpdateAvailabilityDto) {
+    const updated = await this.prisma.driver.update({
       where: { id: driverId },
       data: {
         status: dto.status,
@@ -89,6 +93,15 @@ export class DriversService {
       },
       select: { id: true, status: true, currentLat: true, currentLng: true, lastLocationAt: true },
     });
+
+    // When going online, ensure the driver's WebSocket connection is in their driver room.
+    // This corrects the case where the socket connected before the driver profile existed
+    // or where a browser singleton socket was shared across customer/driver sessions.
+    if (dto.status === DriverStatus.online) {
+      this.tracking.ensureDriverInRoom(userId, driverId).catch(() => undefined);
+    }
+
+    return updated;
   }
 
   async updateLocation(driverId: string, dto: UpdateLocationDto) {
