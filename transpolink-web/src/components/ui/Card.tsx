@@ -10,7 +10,7 @@ export function Card({ className, interactive, elevated, ...rest }: CardProps) {
   return (
     <div
       className={cn(
-        'rounded-2xl border border-gray-100 bg-white',
+        'rounded-2xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-950',
         elevated ? 'shadow-card' : '',
         interactive && [
           'cursor-pointer transition-all duration-200',
@@ -29,11 +29,11 @@ export function CardHeader({ className, ...rest }: HTMLAttributes<HTMLDivElement
 }
 
 export function CardTitle({ className, ...rest }: HTMLAttributes<HTMLHeadingElement>) {
-  return <h2 className={cn('text-base font-semibold text-gray-900', className)} {...rest} />;
+  return <h2 className={cn('text-base font-semibold text-gray-900 dark:text-white', className)} {...rest} />;
 }
 
 export function CardDescription({ className, ...rest }: HTMLAttributes<HTMLParagraphElement>) {
-  return <p className={cn('mt-0.5 text-sm text-gray-500', className)} {...rest} />;
+  return <p className={cn('mt-0.5 text-sm text-gray-500 dark:text-gray-400', className)} {...rest} />;
 }
 
 export function CardBody({ className, ...rest }: HTMLAttributes<HTMLDivElement>) {
@@ -43,7 +43,7 @@ export function CardBody({ className, ...rest }: HTMLAttributes<HTMLDivElement>)
 export function CardFooter({ className, ...rest }: HTMLAttributes<HTMLDivElement>) {
   return (
     <div
-      className={cn('flex items-center justify-end gap-2 border-t border-gray-100 px-5 py-4 sm:px-6', className)}
+      className={cn('flex items-center justify-end gap-2 border-t border-gray-100 dark:border-gray-800 px-5 py-4 sm:px-6', className)}
       {...rest}
     />
   );

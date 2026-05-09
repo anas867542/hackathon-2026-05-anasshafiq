@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useParams } from 'next/navigation';
-import { Card, CardBody, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { StatusBadge } from '@/components/status/StatusBadge';
@@ -125,34 +124,36 @@ export default function CustomerTrackingPage() {
 
   return (
     <>
-    <div className="container-page py-6 space-y-5 animate-fade-in">
-      {/* Header */}
-      <header className="flex items-start justify-between gap-3">
-        <div>
-          {booking ? (
-            <p className="text-xs text-gray-400 font-mono">{booking.referenceCode}</p>
-          ) : (
-            <Skeleton className="h-3 w-24 mb-1 rounded-full" />
-          )}
-          <h1 className="text-xl font-bold tracking-tight text-gray-900">Live tracking</h1>
-        </div>
-        <StatusBadge status={liveStatus} />
-      </header>
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
+      <div className="container-page py-6 space-y-5 animate-fade-in">
+        {/* Header */}
+        <header className="flex items-start justify-between gap-3">
+          <div>
+            {booking ? (
+              <p className="text-xs text-gray-400 dark:text-gray-500 font-mono">{booking.referenceCode}</p>
+            ) : (
+              <Skeleton className="h-3 w-24 mb-1 rounded-full" />
+            )}
+            <h1 className="text-xl font-bold tracking-tight text-gray-900 dark:text-white">Live tracking</h1>
+          </div>
+          <StatusBadge status={liveStatus} />
+        </header>
 
-      {loadError && (
-        <div className="rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700">{loadError}</div>
-      )}
+        {loadError && (
+          <div className="rounded-2xl border border-red-100 dark:border-red-900 bg-red-50 dark:bg-red-950/50 px-4 py-3 text-sm text-red-700 dark:text-red-400">
+            {loadError}
+          </div>
+        )}
 
-      {noDriversMessage && liveStatus === 'pending' && (
-        <div className="rounded-2xl border border-amber-100 bg-amber-50 px-4 py-3 text-sm text-amber-700 animate-slide-up">
-          <p className="font-semibold">No drivers available nearby</p>
-          <p className="mt-1 text-xs">{noDriversMessage} You can wait — drivers coming online will be notified automatically.</p>
-        </div>
-      )}
+        {noDriversMessage && liveStatus === 'pending' && (
+          <div className="rounded-2xl border border-amber-100 dark:border-amber-900 bg-amber-50 dark:bg-amber-950/50 px-4 py-3 text-sm text-amber-700 dark:text-amber-400 animate-slide-up">
+            <p className="font-semibold">No drivers available nearby</p>
+            <p className="mt-1 text-xs">{noDriversMessage} You can wait — drivers coming online will be notified automatically.</p>
+          </div>
+        )}
 
-      {/* Progress stepper */}
-      <Card elevated>
-        <CardBody className="py-5">
+        {/* Progress stepper */}
+        <div className="rounded-2xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-950 shadow-card px-5 py-5 sm:px-6">
           <ol className="flex items-center justify-between">
             {PROGRESS.map((step, i) => {
               const reached  = stepIndex >= i;
@@ -164,154 +165,154 @@ export default function CustomerTrackingPage() {
                       reached
                         ? isActive
                           ? 'bg-brand-600 text-white shadow-glow scale-110'
-                          : 'bg-gray-800 text-white'
-                        : 'border-2 border-gray-200 bg-white text-gray-400'
+                          : 'bg-gray-800 dark:bg-white text-white dark:text-gray-900'
+                        : 'border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-950 text-gray-400 dark:text-gray-600'
                     }`}>
                       {reached && !isActive
                         ? <svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="2 6 5 9 10 3"/></svg>
                         : i + 1}
                     </span>
                     <span className={`text-[10px] text-center capitalize leading-tight max-w-[48px] ${
-                      reached ? 'text-gray-700 font-semibold' : 'text-gray-400'
+                      reached ? 'text-gray-700 dark:text-gray-300 font-semibold' : 'text-gray-400 dark:text-gray-600'
                     }`}>
                       {step.replace('_', ' ')}
                     </span>
                   </div>
                   {i < PROGRESS.length - 1 && (
                     <span className={`mx-1 mb-4 h-0.5 flex-1 rounded-full transition-all ${
-                      stepIndex > i ? 'bg-brand-600' : 'bg-gray-200'
+                      stepIndex > i ? 'bg-brand-600' : 'bg-gray-200 dark:bg-gray-700'
                     }`} />
                   )}
                 </li>
               );
             })}
           </ol>
-        </CardBody>
-      </Card>
+        </div>
 
-      {/* Phase + ETA banner */}
-      <TripStatusCard
-        phase={phase}
-        isLive={isConnected}
-        etaMinutes={eta?.durationMinutes ?? null}
-        distanceKmRemaining={eta?.distanceKm ?? null}
-        speedKmh={driverLocation?.speedKmh ?? null}
-        lastUpdateAt={driverLocation ? new Date(driverLocation.at) : null}
-        isSignalStale={isStale && !!smoothedDriver}
-        signalAgeMs={signalAgeMs}
-      />
+        {/* Status + ETA */}
+        <TripStatusCard
+          phase={phase}
+          isLive={isConnected}
+          etaMinutes={eta?.durationMinutes ?? null}
+          distanceKmRemaining={eta?.distanceKm ?? null}
+          speedKmh={driverLocation?.speedKmh ?? null}
+          lastUpdateAt={driverLocation ? new Date(driverLocation.at) : null}
+          isSignalStale={isStale && !!smoothedDriver}
+          signalAgeMs={signalAgeMs}
+        />
 
-      {displayDriver && <DriverInfoCard driver={displayDriver} truck={displayTruck} />}
+        {displayDriver && <DriverInfoCard driver={displayDriver} truck={displayTruck} />}
 
-      {isBiddingPhase && (
-        <section className="space-y-3">
-          <div className="flex items-center justify-between">
-            <h2 className="text-base font-bold tracking-tight">Driver offers</h2>
-            <span className="flex size-6 items-center justify-center rounded-full bg-brand-600 text-xs font-bold text-white">
-              {bids?.length ?? 0}
-            </span>
+        {isBiddingPhase && (
+          <section className="space-y-3">
+            <div className="flex items-center justify-between">
+              <h2 className="text-sm font-semibold text-gray-900 dark:text-white">Driver offers</h2>
+              <span className="flex size-6 items-center justify-center rounded-full bg-brand-600 text-xs font-bold text-white">
+                {bids?.length ?? 0}
+              </span>
+            </div>
+            <BidsList bids={bids} onAccept={acceptBid} />
+          </section>
+        )}
+
+        {/* Map + Trip summary */}
+        <div className="grid gap-5 lg:grid-cols-[1fr_340px]">
+          <div className="h-[360px] sm:h-[440px] lg:h-[520px]">
+            {booking && pickupCoord && dropoffCoord ? (
+              <TrackingMap
+                pickup={pickupCoord}
+                dropoff={dropoffCoord}
+                driver={
+                  smoothedDriver
+                    ? { lat: smoothedDriver.lat, lng: smoothedDriver.lng, heading: smoothedDriver.heading }
+                    : driverLocation
+                    ? { lat: driverLocation.lat, lng: driverLocation.lng, heading: driverLocation.heading }
+                    : initialDriverPos
+                }
+                preSmoothed={!!smoothedDriver}
+                isSignalStale={isStale && !!smoothedDriver}
+                phase={phase}
+                nearbyDrivers={phase === 'searching' ? nearbyDrivers : undefined}
+                followDriver
+                className="h-full rounded-2xl overflow-hidden"
+              />
+            ) : (
+              <div className="grid h-full place-items-center rounded-2xl border border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-900">
+                {booking ? (
+                  <span className="text-sm text-gray-400 dark:text-gray-500">No route coordinates available</span>
+                ) : (
+                  <div className="space-y-2 text-center">
+                    <div className="grid size-12 place-items-center rounded-2xl bg-gray-200 dark:bg-gray-700 text-2xl mx-auto animate-pulse">🗺</div>
+                    <span className="text-sm text-gray-400 dark:text-gray-500">Loading map…</span>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
-          <BidsList bids={bids} onAccept={acceptBid} />
-        </section>
-      )}
 
-      {/* Map + Trip summary */}
-      <div className="grid gap-5 lg:grid-cols-[1fr_340px]">
-        <div className="h-[360px] sm:h-[440px] lg:h-[520px]">
-          {booking && pickupCoord && dropoffCoord ? (
-            <TrackingMap
-              pickup={pickupCoord}
-              dropoff={dropoffCoord}
-              driver={
-                smoothedDriver
-                  ? { lat: smoothedDriver.lat, lng: smoothedDriver.lng, heading: smoothedDriver.heading }
-                  : driverLocation
-                  ? { lat: driverLocation.lat, lng: driverLocation.lng, heading: driverLocation.heading }
-                  : initialDriverPos
-              }
-              preSmoothed={!!smoothedDriver}
-              isSignalStale={isStale && !!smoothedDriver}
-              phase={phase}
-              nearbyDrivers={phase === 'searching' ? nearbyDrivers : undefined}
-              followDriver
-              className="h-full rounded-2xl overflow-hidden"
-            />
-          ) : (
-            <div className="grid h-full place-items-center rounded-2xl border border-gray-100 bg-gray-50">
+          {/* Trip summary */}
+          <div className="rounded-2xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-950 shadow-card overflow-hidden">
+            <div className="px-5 pt-5 pb-3 sm:px-6">
+              <h2 className="text-base font-semibold text-gray-900 dark:text-white">Trip summary</h2>
+            </div>
+            <div className="px-5 pb-5 sm:px-6 space-y-3 text-sm">
               {booking ? (
-                <span className="text-sm text-gray-400">No route coordinates available</span>
+                <>
+                  <SummaryRow label="Pickup"   value={booking.pickupAddress} />
+                  <SummaryRow label="Drop-off" value={booking.dropoffAddress} />
+
+                  <div className="border-t border-gray-100 dark:border-gray-800 pt-3 space-y-2.5">
+                    <div className="flex justify-between">
+                      <span className="text-gray-500 dark:text-gray-400">Vehicle</span>
+                      <span className="font-semibold capitalize text-gray-900 dark:text-white">{booking.vehicleType.replace('_', ' ')}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-500 dark:text-gray-400">Distance</span>
+                      <span className="font-semibold text-gray-900 dark:text-white">
+                        {booking.distanceKm ? `${Number(booking.distanceKm).toFixed(1)} km` : '—'}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex justify-between border-t border-gray-100 dark:border-gray-800 pt-3 text-base">
+                    <span className="font-semibold text-gray-900 dark:text-white">
+                      {booking.finalFare ? 'Final fare' : 'Estimated fare'}
+                    </span>
+                    <span className="font-bold text-gray-900 dark:text-white">
+                      {booking.finalFare
+                        ? formatCurrency(Number(booking.finalFare))
+                        : booking.estimatedFare
+                        ? formatCurrency(Number(booking.estimatedFare))
+                        : '—'}
+                    </span>
+                  </div>
+
+                  {['pending', 'accepted'].includes(booking.status) && (
+                    <Button variant="danger" size="sm" className="mt-2 w-full" onClick={cancel}>
+                      Cancel booking
+                    </Button>
+                  )}
+                </>
               ) : (
-                <div className="space-y-2 text-center">
-                  <div className="grid size-12 place-items-center rounded-2xl bg-gray-200 text-2xl mx-auto animate-pulse">🗺</div>
-                  <span className="text-sm text-gray-400">Loading map…</span>
+                <div className="space-y-3">
+                  <div className="space-y-1.5">
+                    <Skeleton className="h-3 w-12 rounded-full" />
+                    <Skeleton className="h-4 w-full rounded-xl" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Skeleton className="h-3 w-14 rounded-full" />
+                    <Skeleton className="h-4 w-full rounded-xl" />
+                  </div>
+                  <Skeleton className="h-px w-full my-1" />
+                  <div className="flex justify-between">
+                    <Skeleton className="h-4 w-16 rounded-xl" />
+                    <Skeleton className="h-4 w-16 rounded-xl" />
+                  </div>
                 </div>
               )}
             </div>
-          )}
+          </div>
         </div>
-
-        {/* Trip summary */}
-        <Card elevated>
-          <CardHeader>
-            <CardTitle>Trip summary</CardTitle>
-          </CardHeader>
-          <CardBody className="space-y-3 text-sm">
-            {booking ? (
-              <>
-                <SummaryRow label="Pickup"   value={booking.pickupAddress} />
-                <SummaryRow label="Drop-off" value={booking.dropoffAddress} />
-
-                <div className="border-t border-gray-100 pt-3 space-y-2.5">
-                  <div className="flex justify-between">
-                    <span className="text-gray-500">Vehicle</span>
-                    <span className="font-semibold capitalize">{booking.vehicleType.replace('_', ' ')}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-500">Distance</span>
-                    <span className="font-semibold">
-                      {booking.distanceKm ? `${Number(booking.distanceKm).toFixed(1)} km` : '—'}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="flex justify-between border-t border-gray-100 pt-3 text-base">
-                  <span className="font-semibold text-gray-900">
-                    {booking.finalFare ? 'Final fare' : 'Estimated fare'}
-                  </span>
-                  <span className="font-bold text-gray-900">
-                    {booking.finalFare
-                      ? formatCurrency(Number(booking.finalFare))
-                      : booking.estimatedFare
-                      ? formatCurrency(Number(booking.estimatedFare))
-                      : '—'}
-                  </span>
-                </div>
-
-                {['pending', 'accepted'].includes(booking.status) && (
-                  <Button variant="danger" size="sm" className="mt-2 w-full" onClick={cancel}>
-                    Cancel booking
-                  </Button>
-                )}
-              </>
-            ) : (
-              <div className="space-y-3">
-                <div className="space-y-1.5">
-                  <Skeleton className="h-3 w-12 rounded-full" />
-                  <Skeleton className="h-4 w-full rounded-xl" />
-                </div>
-                <div className="space-y-1.5">
-                  <Skeleton className="h-3 w-14 rounded-full" />
-                  <Skeleton className="h-4 w-full rounded-xl" />
-                </div>
-                <Skeleton className="h-px w-full my-1" />
-                <div className="flex justify-between">
-                  <Skeleton className="h-4 w-16 rounded-xl" />
-                  <Skeleton className="h-4 w-16 rounded-xl" />
-                </div>
-              </div>
-            )}
-          </CardBody>
-        </Card>
       </div>
     </div>
 
@@ -329,8 +330,8 @@ export default function CustomerTrackingPage() {
 function SummaryRow({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <div className="text-xs text-gray-400 font-medium">{label}</div>
-      <div className="mt-0.5 font-semibold text-gray-900">{value}</div>
+      <div className="text-xs text-gray-400 dark:text-gray-500 font-medium">{label}</div>
+      <div className="mt-0.5 font-semibold text-gray-900 dark:text-white">{value}</div>
     </div>
   );
 }

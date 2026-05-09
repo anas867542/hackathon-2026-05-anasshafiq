@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { Card, CardBody, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { Skeleton } from '@/components/ui/Skeleton';
@@ -18,13 +17,13 @@ import { formatCurrency } from '@/lib/utils';
 import { getTripPhase } from '@/lib/booking/phase';
 import { RatingModal } from '@/components/booking/RatingModal';
 
-const PHASE_META: Record<string, { label: string; icon: string; hint: string }> = {
-  searching:  { label: 'Searching for booking…',     icon: '🔍', hint: '' },
-  to_pickup:  { label: 'Head to pickup location',    icon: '🧭', hint: 'Follow navigation to collect the goods.' },
-  at_pickup:  { label: 'Arrived at pickup',          icon: '📦', hint: 'Load the goods and tap Start trip when ready.' },
-  to_dropoff: { label: 'En route to drop-off',       icon: '🚛', hint: 'Drive to the destination. GPS is streaming.' },
-  completed:  { label: 'Trip completed',             icon: '✅', hint: 'Great job! Awaiting customer review.' },
-  cancelled:  { label: 'Trip cancelled',             icon: '✕',  hint: 'This booking was cancelled.' },
+const PHASE_META: Record<string, { label: string; icon: string; hint: string; color: string }> = {
+  searching:  { label: 'Searching for booking…',     icon: '🔍', hint: '',                                                    color: 'bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-700' },
+  to_pickup:  { label: 'Head to pickup location',    icon: '🧭', hint: 'Follow navigation to collect the goods.',             color: 'bg-brand-50 dark:bg-brand-950/40 border-brand-200 dark:border-brand-800' },
+  at_pickup:  { label: 'Arrived at pickup',          icon: '📦', hint: 'Load the goods and tap Start trip when ready.',       color: 'bg-amber-50 dark:bg-amber-950/40 border-amber-200 dark:border-amber-800' },
+  to_dropoff: { label: 'En route to drop-off',       icon: '🚛', hint: 'Drive to the destination. GPS is streaming.',         color: 'bg-brand-50 dark:bg-brand-950/40 border-brand-200 dark:border-brand-800' },
+  completed:  { label: 'Trip completed',             icon: '✅', hint: 'Great job! Awaiting customer review.',                color: 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800' },
+  cancelled:  { label: 'Trip cancelled',             icon: '✕',  hint: 'This booking was cancelled.',                         color: 'bg-red-50 dark:bg-red-950/40 border-red-200 dark:border-red-800' },
 };
 
 export default function DriverTripPage() {
@@ -58,7 +57,7 @@ export default function DriverTripPage() {
   });
 
   const phase = getTripPhase(effectiveStatus);
-  const phaseMeta = PHASE_META[phase] ?? { label: 'Waiting…', icon: '⏳', hint: '' };
+  const phaseMeta = PHASE_META[phase] ?? { label: 'Waiting…', icon: '⏳', hint: '', color: 'bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-700' };
 
   const pickupCoord = useMemo(() => {
     if (!booking) return null;
@@ -74,7 +73,6 @@ export default function DriverTripPage() {
     return Number.isFinite(lat) && Number.isFinite(lng) ? { lat, lng } : null;
   }, [booking]);
 
-  // Use driver's DB position as seed until device GPS fires
   const initialDriverPos = useMemo(() => {
     if (!booking?.driver) return null;
     const lat = Number(booking.driver.currentLat);
@@ -101,181 +99,180 @@ export default function DriverTripPage() {
 
   return (
     <>
-    <div className="space-y-5 animate-fade-in">
-      {/* Header */}
-      <header className="flex items-start justify-between gap-3">
-        <div>
-          {booking ? (
-            <p className="text-xs text-zinc-400">{booking.referenceCode}</p>
-          ) : (
-            <Skeleton className="h-3 w-24 mb-1" />
-          )}
-          <h1 className="text-xl font-semibold tracking-tight text-zinc-900">Live trip</h1>
-        </div>
-        <div className="flex items-center gap-2">
-          <Badge tone={isStreaming ? 'success' : 'neutral'} size="md">
-            <span className={`mr-1.5 inline-block size-1.5 rounded-full ${isStreaming ? 'bg-emerald-500 animate-pulse' : 'bg-zinc-400'}`} aria-hidden />
-            {isStreaming ? 'GPS live' : 'GPS off'}
-          </Badge>
-          <StatusBadge status={effectiveStatus} />
-        </div>
-      </header>
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
+      <div className="container-page py-6 space-y-5 animate-fade-in">
+        {/* Header */}
+        <header className="flex items-start justify-between gap-3">
+          <div>
+            {booking ? (
+              <p className="text-xs text-gray-400 dark:text-gray-500 font-mono">{booking.referenceCode}</p>
+            ) : (
+              <Skeleton className="h-3 w-24 mb-1" />
+            )}
+            <h1 className="text-xl font-bold tracking-tight text-gray-900 dark:text-white">Live trip</h1>
+          </div>
+          <div className="flex items-center gap-2">
+            <Badge tone={isStreaming ? 'success' : 'neutral'} size="md">
+              <span className={`mr-1.5 inline-block size-1.5 rounded-full ${isStreaming ? 'bg-emerald-500 animate-pulse' : 'bg-gray-400'}`} aria-hidden />
+              {isStreaming ? 'GPS live' : 'GPS off'}
+            </Badge>
+            <StatusBadge status={effectiveStatus} />
+          </div>
+        </header>
 
-      {error && (
-        <div className="rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700">
-          {error}
-        </div>
-      )}
+        {error && (
+          <div className="rounded-2xl border border-red-100 dark:border-red-900 bg-red-50 dark:bg-red-950/50 px-4 py-3 text-sm text-red-700 dark:text-red-400">
+            {error}
+          </div>
+        )}
 
-      {/* Cancellation banner */}
-      {cancellation && (
-        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800 animate-slide-up">
-          <p className="font-semibold">Booking cancelled</p>
-          {cancellation.reason && <p className="mt-1 text-xs">Reason: {cancellation.reason}</p>}
-          {cancellation.cancelledBy && (
-            <p className="mt-0.5 text-xs capitalize">Cancelled by: {cancellation.cancelledBy}</p>
-          )}
-        </div>
-      )}
+        {cancellation && (
+          <div className="rounded-2xl border border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-950/50 px-4 py-3 text-sm text-red-800 dark:text-red-400 animate-slide-up">
+            <p className="font-semibold">Booking cancelled</p>
+            {cancellation.reason && <p className="mt-1 text-xs">Reason: {cancellation.reason}</p>}
+            {cancellation.cancelledBy && (
+              <p className="mt-0.5 text-xs capitalize">Cancelled by: {cancellation.cancelledBy}</p>
+            )}
+          </div>
+        )}
 
-      {lastError && (
-        <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-2.5 text-sm text-amber-700">
-          GPS issue: {lastError}
-        </div>
-      )}
+        {lastError && (
+          <div className="rounded-2xl border border-amber-200 dark:border-amber-900 bg-amber-50 dark:bg-amber-950/50 px-4 py-2.5 text-sm text-amber-700 dark:text-amber-400">
+            GPS issue: {lastError}
+          </div>
+        )}
 
-      {/* Phase banner */}
-      <Card className="border-brand-200 bg-brand-50/30">
-        <CardBody className="flex items-center gap-4 py-4">
-          <div className="grid size-12 shrink-0 place-items-center rounded-2xl bg-white text-2xl shadow-soft">
+        {/* Phase banner */}
+        <div className={`rounded-2xl border ${phaseMeta.color} px-5 py-4 flex items-center gap-4`}>
+          <div className="grid size-12 shrink-0 place-items-center rounded-2xl bg-white dark:bg-gray-900 text-2xl shadow-soft">
             {phaseMeta.icon}
           </div>
           <div className="min-w-0 flex-1">
-            <p className="text-xs font-medium uppercase tracking-wider text-brand-600">Next step</p>
-            <p className="mt-0.5 text-base font-semibold text-zinc-900">{phaseMeta.label}</p>
+            <p className="text-xs font-semibold uppercase tracking-wider text-brand-600 dark:text-brand-400">Next step</p>
+            <p className="mt-0.5 text-base font-bold text-gray-900 dark:text-white">{phaseMeta.label}</p>
             {phaseMeta.hint && (
-              <p className="mt-0.5 text-xs text-zinc-500">{phaseMeta.hint}</p>
+              <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">{phaseMeta.hint}</p>
             )}
             {currentPosition && (
-              <p className="mt-1 text-xs text-zinc-400">
+              <p className="mt-1 text-xs text-gray-400 dark:text-gray-500">
                 {currentPosition.lat.toFixed(4)}, {currentPosition.lng.toFixed(4)}
                 {currentPosition.speedKmh != null && ` · ${currentPosition.speedKmh.toFixed(0)} km/h`}
               </p>
             )}
           </div>
-        </CardBody>
-      </Card>
+        </div>
 
-      {/* Map */}
-      <div className="h-[360px] sm:h-[440px]">
-        {pickupCoord && dropoffCoord ? (
-          <TrackingMap
-            pickup={pickupCoord}
-            dropoff={dropoffCoord}
-            driver={effectiveDriverPos}
-            phase={phase}
-            followDriver
-            className="h-full rounded-2xl overflow-hidden"
-          />
-        ) : (
-          <div className="grid h-full place-items-center rounded-2xl border border-zinc-200 bg-zinc-50">
-            <div className="space-y-2 text-center">
-              <div className="grid size-10 place-items-center rounded-xl bg-zinc-200 text-xl mx-auto animate-pulse">🗺</div>
-              <span className="text-sm text-zinc-400">Loading map…</span>
+        {/* Map */}
+        <div className="h-[360px] sm:h-[440px]">
+          {pickupCoord && dropoffCoord ? (
+            <TrackingMap
+              pickup={pickupCoord}
+              dropoff={dropoffCoord}
+              driver={effectiveDriverPos}
+              phase={phase}
+              followDriver
+              className="h-full rounded-2xl overflow-hidden"
+            />
+          ) : (
+            <div className="grid h-full place-items-center rounded-2xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
+              <div className="space-y-2 text-center">
+                <div className="grid size-10 place-items-center rounded-xl bg-gray-200 dark:bg-gray-700 text-xl mx-auto animate-pulse">🗺</div>
+                <span className="text-sm text-gray-400 dark:text-gray-500">Loading map…</span>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Trip details + Actions */}
+        <div className="grid gap-5 lg:grid-cols-[1fr_300px]">
+          {/* Trip details */}
+          <div className="rounded-2xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-950 shadow-card">
+            <div className="px-5 pt-5 pb-3 sm:px-6">
+              <h2 className="text-base font-semibold text-gray-900 dark:text-white">Trip details</h2>
+            </div>
+            <div className="px-5 pb-5 sm:px-6 space-y-3 text-sm">
+              {booking ? (
+                <>
+                  <div>
+                    <div className="text-xs text-gray-400 dark:text-gray-500 font-medium">Pickup</div>
+                    <div className="mt-0.5 font-semibold text-gray-900 dark:text-white">{booking.pickupAddress}</div>
+                  </div>
+                  <div>
+                    <div className="text-xs text-gray-400 dark:text-gray-500 font-medium">Drop-off</div>
+                    <div className="mt-0.5 font-semibold text-gray-900 dark:text-white">{booking.dropoffAddress}</div>
+                  </div>
+                  {booking.goodsDescription && (
+                    <div className="border-t border-gray-100 dark:border-gray-800 pt-3">
+                      <div className="text-xs text-gray-400 dark:text-gray-500 font-medium">Goods</div>
+                      <div className="mt-0.5 text-gray-700 dark:text-gray-300">{booking.goodsDescription}</div>
+                    </div>
+                  )}
+                  <div className="flex items-center justify-between border-t border-gray-100 dark:border-gray-800 pt-3">
+                    <span className="font-semibold text-gray-900 dark:text-white">Fare</span>
+                    <span className="text-lg font-bold text-gray-900 dark:text-white">
+                      {formatCurrency(Number(booking.finalFare ?? booking.estimatedFare ?? 0))}
+                    </span>
+                  </div>
+                </>
+              ) : (
+                <div className="space-y-3">
+                  <div className="space-y-1.5"><Skeleton className="h-3 w-12" /><Skeleton className="h-4 w-full" /></div>
+                  <div className="space-y-1.5"><Skeleton className="h-3 w-14" /><Skeleton className="h-4 w-full" /></div>
+                </div>
+              )}
             </div>
           </div>
-        )}
-      </div>
 
-      {/* Trip details + Actions */}
-      <div className="grid gap-5 lg:grid-cols-[1fr_300px]">
-        {/* Trip details */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Trip details</CardTitle>
-          </CardHeader>
-          <CardBody className="space-y-3 text-sm">
-            {booking ? (
-              <>
-                <div>
-                  <div className="text-xs text-zinc-500">Pickup</div>
-                  <div className="mt-0.5 font-medium text-zinc-900">{booking.pickupAddress}</div>
-                </div>
-                <div>
-                  <div className="text-xs text-zinc-500">Drop-off</div>
-                  <div className="mt-0.5 font-medium text-zinc-900">{booking.dropoffAddress}</div>
-                </div>
-                {booking.goodsDescription && (
-                  <div className="border-t border-zinc-100 pt-3">
-                    <div className="text-xs text-zinc-500">Goods</div>
-                    <div className="mt-0.5 text-zinc-700">{booking.goodsDescription}</div>
-                  </div>
-                )}
-                <div className="flex items-center justify-between border-t border-zinc-100 pt-3 text-base">
-                  <span className="font-medium text-zinc-900">Fare</span>
-                  <span className="font-bold text-zinc-900">
-                    {formatCurrency(Number(booking.finalFare ?? booking.estimatedFare ?? 0))}
+          {/* Actions */}
+          <div className="rounded-2xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-950 shadow-card">
+            <div className="px-5 pt-5 pb-3 sm:px-6">
+              <h2 className="text-base font-semibold text-gray-900 dark:text-white">Trip actions</h2>
+            </div>
+            <div className="px-5 pb-5 sm:px-6 space-y-3">
+              {effectiveStatus === 'accepted' && (
+                <Button variant="brand" className="w-full" onClick={() => transition('arrive')}>
+                  Mark arrived at pickup
+                </Button>
+              )}
+              {effectiveStatus === 'arrived' && (
+                <Button variant="brand" className="w-full" onClick={() => transition('start')}>
+                  Start trip
+                </Button>
+              )}
+              {effectiveStatus === 'in_progress' && (
+                <Button variant="brand" className="w-full" onClick={() => transition('complete')}>
+                  Complete trip
+                </Button>
+              )}
+
+              <Button
+                className="w-full"
+                variant={enabled ? 'secondary' : 'ghost'}
+                onClick={() => setEnabled((v) => !v)}
+                disabled={!streamingEligible}
+              >
+                {enabled ? 'Pause GPS sharing' : 'Resume GPS sharing'}
+              </Button>
+
+              <div className="rounded-xl bg-gray-50 dark:bg-gray-900 border border-gray-100 dark:border-gray-800 px-3 py-2.5 text-xs text-gray-500 dark:text-gray-400 space-y-1">
+                <div className="flex justify-between">
+                  <span>GPS status</span>
+                  <span className={isStreaming ? 'text-emerald-600 dark:text-emerald-400 font-semibold' : 'text-gray-400 dark:text-gray-600'}>
+                    {isStreaming ? 'Streaming' : 'Idle'}
                   </span>
                 </div>
-              </>
-            ) : (
-              <div className="space-y-3">
-                <div className="space-y-1.5"><Skeleton className="h-3 w-12" /><Skeleton className="h-4 w-full" /></div>
-                <div className="space-y-1.5"><Skeleton className="h-3 w-14" /><Skeleton className="h-4 w-full" /></div>
-              </div>
-            )}
-          </CardBody>
-        </Card>
-
-        {/* Actions */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Trip actions</CardTitle>
-          </CardHeader>
-          <CardBody className="space-y-3">
-            {effectiveStatus === 'accepted' && (
-              <Button variant="brand" className="w-full" onClick={() => transition('arrive')}>
-                Mark arrived at pickup
-              </Button>
-            )}
-            {effectiveStatus === 'arrived' && (
-              <Button variant="brand" className="w-full" onClick={() => transition('start')}>
-                Start trip
-              </Button>
-            )}
-            {effectiveStatus === 'in_progress' && (
-              <Button variant="brand" className="w-full" onClick={() => transition('complete')}>
-                Complete trip
-              </Button>
-            )}
-
-            <Button
-              className="w-full"
-              variant={enabled ? 'secondary' : 'ghost'}
-              onClick={() => setEnabled((v) => !v)}
-              disabled={!streamingEligible}
-            >
-              {enabled ? 'Pause GPS sharing' : 'Resume GPS sharing'}
-            </Button>
-
-            <div className="rounded-xl bg-zinc-50 px-3 py-2.5 text-xs text-zinc-500">
-              <div className="flex justify-between">
-                <span>GPS status</span>
-                <span className={isStreaming ? 'text-emerald-600 font-medium' : 'text-zinc-400'}>
-                  {isStreaming ? 'Streaming' : 'Idle'}
-                </span>
-              </div>
-              <div className="mt-1 flex justify-between">
-                <span>Last update</span>
-                <span>
-                  {lastSentAt
-                    ? lastSentAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
-                    : '—'}
-                </span>
+                <div className="flex justify-between">
+                  <span>Last update</span>
+                  <span className="text-gray-700 dark:text-gray-300">
+                    {lastSentAt
+                      ? lastSentAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+                      : '—'}
+                  </span>
+                </div>
               </div>
             </div>
-          </CardBody>
-        </Card>
+          </div>
+        </div>
       </div>
     </div>
 

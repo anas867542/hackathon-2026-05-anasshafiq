@@ -4,7 +4,6 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/Button';
-import { Card, CardBody } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { StatusBadge } from '@/components/status/StatusBadge';
@@ -22,11 +21,11 @@ export default function DriverDashboardPage() {
   const { hydrated } = useAuth();
   const token = hydrated ? session.getAccessToken() : null;
 
-  const [profile,  setProfile]  = useState<DriverProfile | null>(null);
-  const [active,   setActive]   = useState<Booking | null>(null);
-  const [error,    setError]    = useState<string | null>(null);
-  const [busy,     setBusy]     = useState(false);
-  const [locating, setLocating] = useState(false);
+  const [profile,   setProfile]   = useState<DriverProfile | null>(null);
+  const [active,    setActive]    = useState<Booking | null>(null);
+  const [error,     setError]     = useState<string | null>(null);
+  const [busy,      setBusy]      = useState(false);
+  const [locating,  setLocating]  = useState(false);
   const [bidTarget, setBidTarget] = useState<InboxItem | null>(null);
 
   const [now, setNow] = useState(Date.now());
@@ -92,7 +91,10 @@ export default function DriverDashboardPage() {
     try {
       const pos = await getPosition();
       await driversApi.setAvailability('online', pos.coords.latitude, pos.coords.longitude);
-      setProfile({ ...profile, currentLat: pos.coords.latitude as DriverProfile['currentLat'], currentLng: pos.coords.longitude as DriverProfile['currentLng'] });
+      setProfile({ ...profile,
+        currentLat: pos.coords.latitude as DriverProfile['currentLat'],
+        currentLng: pos.coords.longitude as DriverProfile['currentLng'],
+      });
     } catch (e) {
       setError(e instanceof ApiError ? e.message : (e as Error).message);
     } finally {
@@ -118,26 +120,24 @@ export default function DriverDashboardPage() {
   const isOnline = profile?.status === 'online';
 
   return (
-    <div className="min-h-screen bg-whisper">
-      {/* ── Status hero ──────────────────────────────────────────────────── */}
-      <div className={`px-4 pt-10 pb-20 sm:px-6 md:rounded-b-3xl transition-colors duration-500 ${
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
+      {/* Hero */}
+      <div className={`px-4 pt-10 pb-24 sm:px-6 md:rounded-b-3xl transition-colors duration-500 ${
         isOnline
-          ? 'bg-gradient-to-br from-brand-600 to-brand-800'
-          : 'bg-gradient-to-br from-gray-700 to-gray-900'
+          ? 'bg-gradient-to-br from-brand-600 via-brand-700 to-brand-900'
+          : 'bg-gradient-to-br from-gray-700 via-gray-800 to-gray-900'
       }`}>
         <div className="mx-auto max-w-2xl">
-          {/* Driver name */}
           <div className="flex items-start justify-between gap-4">
             <div>
               <p className={`text-xs font-semibold uppercase tracking-wider ${isOnline ? 'text-brand-200' : 'text-gray-400'}`}>
                 Driver
               </p>
-              <h1 className="mt-0.5 text-xl font-bold text-white">
-                {profile?.user.fullName ?? <Skeleton className="inline-block h-6 w-40 bg-white/20" />}
+              <h1 className="mt-0.5 text-2xl font-bold text-white">
+                {profile?.user.fullName ?? <Skeleton className="inline-block h-7 w-40 bg-white/20" />}
               </h1>
             </div>
 
-            {/* Online/offline toggle */}
             <div className="flex flex-col items-end gap-2">
               <div className={`flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-semibold ${
                 isOnline ? 'bg-emerald-400/20 text-emerald-300' : 'bg-white/10 text-gray-400'
@@ -150,14 +150,14 @@ export default function DriverDashboardPage() {
                 isLoading={busy}
                 variant={isOnline ? 'secondary' : 'brand'}
                 size="sm"
-                className={isOnline ? '' : 'bg-white text-brand-700 hover:bg-white/90 border-white'}
+                className={isOnline ? '' : 'bg-white text-brand-700 hover:bg-brand-50 border-white font-semibold'}
               >
                 {isOnline ? 'Go offline' : 'Go online'}
               </Button>
             </div>
           </div>
 
-          {/* Stats row */}
+          {/* Stats */}
           <div className="mt-6 grid grid-cols-3 gap-3">
             {profile === null ? (
               Array.from({ length: 3 }).map((_, i) => (
@@ -168,13 +168,13 @@ export default function DriverDashboardPage() {
               ))
             ) : (
               [
-                { label: 'Trips',    value: profile.totalTrips.toString() },
-                { label: 'Rating',   value: `${Number(profile.ratingAvg).toFixed(1)} ★` },
-                { label: 'Earned',   value: formatCurrency(Number(profile.totalEarnings)), small: true },
+                { label: 'Trips',  value: profile.totalTrips.toString() },
+                { label: 'Rating', value: `${Number(profile.ratingAvg).toFixed(1)} ★` },
+                { label: 'Earned', value: formatCurrency(Number(profile.totalEarnings)), small: true },
               ].map(({ label, value, small }) => (
                 <div key={label} className="rounded-2xl bg-white/10 px-3 py-3">
                   <p className={`text-xs font-medium ${isOnline ? 'text-brand-200' : 'text-gray-400'}`}>{label}</p>
-                  <p className={`mt-1 font-bold text-white ${small ? 'text-sm' : 'text-lg'}`}>{value}</p>
+                  <p className={`mt-1 font-bold text-white ${small ? 'text-sm' : 'text-xl'}`}>{value}</p>
                 </div>
               ))
             )}
@@ -189,7 +189,7 @@ export default function DriverDashboardPage() {
               <button
                 onClick={refreshLocation}
                 disabled={locating || busy}
-                className="text-xs text-brand-200 hover:text-white underline underline-offset-2 disabled:opacity-50"
+                className="text-xs text-brand-200 hover:text-white underline underline-offset-2 disabled:opacity-50 transition-colors"
               >
                 {locating ? 'Updating…' : 'Refresh location'}
               </button>
@@ -198,42 +198,42 @@ export default function DriverDashboardPage() {
         </div>
       </div>
 
-      {/* ── Content ──────────────────────────────────────────────────────── */}
-      <div className="-mt-10 px-4 pb-8 sm:px-6">
+      {/* Content */}
+      <div className="-mt-12 px-4 pb-10 sm:px-6">
         <div className="mx-auto max-w-2xl space-y-5">
 
           {error && (
-            <div className="rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700 animate-slide-up">
+            <div className="rounded-2xl border border-red-100 dark:border-red-900 bg-red-50 dark:bg-red-950/50 px-4 py-3 text-sm text-red-700 dark:text-red-400 animate-slide-up">
               {error}
             </div>
           )}
 
           {isOnline && !profile?.currentLat && (
-            <div className="rounded-2xl border border-amber-100 bg-amber-50 px-4 py-3 text-sm text-amber-700 animate-slide-up">
+            <div className="rounded-2xl border border-amber-100 dark:border-amber-900 bg-amber-50 dark:bg-amber-950/50 px-4 py-3 text-sm text-amber-700 dark:text-amber-400 animate-slide-up">
               <p className="font-semibold">Location missing</p>
               <p className="mt-0.5 text-xs">Click &quot;Refresh location&quot; or toggle offline → online.</p>
             </div>
           )}
 
-          {/* ── Active trip ────────────────────────────────────────────── */}
+          {/* Active trip */}
           {active && (
-            <Card elevated className="border-brand-200 overflow-hidden animate-slide-up">
-              <div className="bg-brand-600 px-5 py-3 flex items-center justify-between">
+            <div className="rounded-2xl border border-brand-200 dark:border-brand-800 bg-white dark:bg-gray-950 shadow-card overflow-hidden animate-slide-up">
+              <div className="bg-brand-600 dark:bg-brand-700 px-5 py-3 flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <span className="size-2 rounded-full bg-white animate-pulse" aria-hidden />
                   <p className="text-xs font-semibold text-white uppercase tracking-wide">Active trip</p>
                 </div>
                 <StatusBadge status={active.status} />
               </div>
-              <CardBody className="space-y-4 pt-4">
+              <div className="px-5 py-4 sm:px-6 space-y-4">
                 <div className="grid gap-3 text-sm sm:grid-cols-2">
                   <div>
-                    <div className="text-xs text-gray-400 font-medium">Pickup</div>
-                    <div className="mt-0.5 font-semibold text-gray-900">{active.pickupAddress}</div>
+                    <div className="text-xs text-gray-400 dark:text-gray-500 font-medium">Pickup</div>
+                    <div className="mt-0.5 font-semibold text-gray-900 dark:text-white">{active.pickupAddress}</div>
                   </div>
                   <div>
-                    <div className="text-xs text-gray-400 font-medium">Drop-off</div>
-                    <div className="mt-0.5 font-semibold text-gray-900">{active.dropoffAddress}</div>
+                    <div className="text-xs text-gray-400 dark:text-gray-500 font-medium">Drop-off</div>
+                    <div className="mt-0.5 font-semibold text-gray-900 dark:text-white">{active.dropoffAddress}</div>
                   </div>
                 </div>
                 <div className="flex flex-wrap gap-2">
@@ -259,14 +259,14 @@ export default function DriverDashboardPage() {
                     <Button size="sm" variant="ghost">Live tracker →</Button>
                   </Link>
                 </div>
-              </CardBody>
-            </Card>
+              </div>
+            </div>
           )}
 
-          {/* ── Incoming requests ─────────────────────────────────────── */}
+          {/* Incoming requests */}
           <section>
             <div className="mb-3 flex items-center justify-between">
-              <h2 className="text-base font-bold text-gray-900">Incoming requests</h2>
+              <h2 className="text-sm font-semibold text-gray-900 dark:text-white">Incoming requests</h2>
               {inbox.length > 0 && (
                 <span className="flex size-6 items-center justify-center rounded-full bg-brand-600 text-xs font-bold text-white">
                   {inbox.length}
@@ -275,22 +275,20 @@ export default function DriverDashboardPage() {
             </div>
 
             {inbox.length === 0 ? (
-              <Card elevated>
-                <CardBody className="flex flex-col items-center justify-center py-16 text-center">
+              <div className="rounded-2xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-950 shadow-card">
+                <div className="flex flex-col items-center justify-center py-16 px-5 text-center">
                   <div className="mb-4 relative">
-                    <div className="grid size-16 place-items-center rounded-2xl bg-gray-100 text-3xl">
+                    <div className="grid size-16 place-items-center rounded-2xl bg-gray-100 dark:bg-gray-800 text-3xl">
                       {isOnline ? '📡' : '💤'}
                     </div>
                     {isOnline && (
-                      <>
-                        <span className="absolute inset-0 rounded-2xl bg-brand-400/20 animate-ping" />
-                      </>
+                      <span className="absolute inset-0 rounded-2xl bg-brand-400/20 animate-ping" />
                     )}
                   </div>
-                  <p className="font-semibold text-gray-700">
+                  <p className="font-semibold text-gray-700 dark:text-gray-300">
                     {isOnline ? 'Listening for bookings…' : 'You are offline'}
                   </p>
-                  <p className="mt-1 text-sm text-gray-400">
+                  <p className="mt-1 text-sm text-gray-400 dark:text-gray-500">
                     {isOnline
                       ? 'New requests near you will appear here instantly.'
                       : 'Go online to start receiving booking requests.'}
@@ -300,8 +298,8 @@ export default function DriverDashboardPage() {
                       Go online
                     </Button>
                   )}
-                </CardBody>
-              </Card>
+                </div>
+              </div>
             ) : (
               <ul className="space-y-3">
                 {inbox.map((o) => {
@@ -315,13 +313,13 @@ export default function DriverDashboardPage() {
 
                   return (
                     <li key={o.bookingId} className="animate-slide-up">
-                      <Card elevated>
-                        <CardBody className="pt-5 space-y-4">
-                          {/* Header row */}
+                      <div className="rounded-2xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-950 shadow-card overflow-hidden">
+                        <div className="p-5 space-y-4">
+                          {/* Header */}
                           <div className="flex items-start justify-between gap-2">
                             <div className="min-w-0">
-                              <div className="font-semibold text-gray-900">{o.referenceCode}</div>
-                              <div className="text-xs text-gray-500 capitalize">
+                              <div className="font-semibold text-gray-900 dark:text-white font-mono text-sm">{o.referenceCode}</div>
+                              <div className="text-xs text-gray-500 dark:text-gray-400 capitalize mt-0.5">
                                 {o.vehicleType.replace('_', ' ')}{isBidding ? ' · bidding' : ''}
                               </div>
                             </div>
@@ -333,8 +331,8 @@ export default function DriverDashboardPage() {
                             </div>
                           </div>
 
-                          {/* Progress bar */}
-                          <div className="h-1.5 w-full overflow-hidden rounded-full bg-gray-100">
+                          {/* Countdown bar */}
+                          <div className="h-1.5 w-full overflow-hidden rounded-full bg-gray-100 dark:bg-gray-800">
                             <div
                               className={`h-full rounded-full transition-all duration-500 ${isUrgent ? 'bg-red-500' : 'bg-amber-400'}`}
                               style={{ width: `${pct}%` }}
@@ -342,30 +340,30 @@ export default function DriverDashboardPage() {
                           </div>
 
                           {/* Route */}
-                          <div className="space-y-2 text-sm">
+                          <div className="space-y-2">
                             <div className="flex items-start gap-2.5">
                               <span className="mt-1 size-2 shrink-0 rounded-full bg-brand-600" aria-hidden />
-                              <span className="text-gray-700 text-xs leading-relaxed">{o.pickup.address}</span>
+                              <span className="text-gray-700 dark:text-gray-300 text-xs leading-relaxed">{o.pickup.address}</span>
                             </div>
                             <div className="flex items-start gap-2.5">
                               <span className="mt-1 size-2 shrink-0 rounded-full bg-red-500" aria-hidden />
-                              <span className="text-gray-700 text-xs leading-relaxed">{o.dropoff.address}</span>
+                              <span className="text-gray-700 dark:text-gray-300 text-xs leading-relaxed">{o.dropoff.address}</span>
                             </div>
                           </div>
 
                           {/* Fare */}
-                          <div className="flex items-center justify-between rounded-2xl bg-gray-50 border border-gray-100 px-4 py-3">
-                            <span className="text-sm text-gray-500">{o.distanceKm.toFixed(1)} km</span>
-                            <span className="text-base font-bold text-gray-900">
+                          <div className="flex items-center justify-between rounded-xl bg-gray-50 dark:bg-gray-900 border border-gray-100 dark:border-gray-800 px-4 py-3">
+                            <span className="text-sm text-gray-500 dark:text-gray-400">{o.distanceKm.toFixed(1)} km</span>
+                            <span className="text-base font-bold text-gray-900 dark:text-white">
                               {formatCurrency(o.estimatedFare)}
-                              {isBidding && <span className="ml-1 text-xs font-normal text-gray-400">ref</span>}
+                              {isBidding && <span className="ml-1 text-xs font-normal text-gray-400 dark:text-gray-500">ref</span>}
                             </span>
                           </div>
 
                           {/* Actions */}
                           {o.bidSubmitted ? (
-                            <div className="flex items-center gap-2 rounded-2xl bg-emerald-50 border border-emerald-100 px-4 py-3 text-sm text-emerald-700">
-                              <span className="text-base">✓</span>
+                            <div className="flex items-center gap-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-100 dark:border-emerald-900 px-4 py-3 text-sm text-emerald-700 dark:text-emerald-400">
+                              <span>✓</span>
                               Bid submitted — waiting for customer
                             </div>
                           ) : (
@@ -385,8 +383,8 @@ export default function DriverDashboardPage() {
                               </Button>
                             </div>
                           )}
-                        </CardBody>
-                      </Card>
+                        </div>
+                      </div>
                     </li>
                   );
                 })}
@@ -394,22 +392,22 @@ export default function DriverDashboardPage() {
             )}
           </section>
 
-          {/* ── My trucks ─────────────────────────────────────────────── */}
+          {/* My trucks */}
           <section>
-            <h2 className="mb-3 text-base font-bold text-gray-900">My trucks</h2>
-            <Card elevated className="overflow-hidden">
+            <h2 className="mb-3 text-sm font-semibold text-gray-900 dark:text-white">My trucks</h2>
+            <div className="rounded-2xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-950 shadow-card overflow-hidden">
               {profile ? (
                 profile.trucks.length === 0 ? (
-                  <CardBody className="py-10 text-center">
-                    <p className="text-sm text-gray-500">No trucks registered yet.</p>
-                  </CardBody>
+                  <div className="py-10 px-5 text-center">
+                    <p className="text-sm text-gray-500 dark:text-gray-400">No trucks registered yet.</p>
+                  </div>
                 ) : (
-                  <ul className="divide-y divide-gray-50">
+                  <ul className="divide-y divide-gray-50 dark:divide-gray-800">
                     {profile.trucks.map((t) => (
                       <li key={t.id} className="flex items-center justify-between px-5 py-4">
                         <div>
-                          <div className="font-semibold text-gray-900">{t.plateNumber}</div>
-                          <div className="mt-0.5 text-xs text-gray-400 capitalize">
+                          <div className="font-semibold text-gray-900 dark:text-white text-sm">{t.plateNumber}</div>
+                          <div className="mt-0.5 text-xs text-gray-400 dark:text-gray-500 capitalize">
                             {t.type.replace('_', ' ')} · {t.capacityKg} kg
                           </div>
                         </div>
@@ -424,7 +422,7 @@ export default function DriverDashboardPage() {
                   </ul>
                 )
               ) : (
-                <CardBody className="space-y-3 py-5">
+                <div className="space-y-3 px-5 py-5 sm:px-6">
                   {[1, 2].map((i) => (
                     <div key={i} className="flex items-center justify-between">
                       <div className="space-y-2">
@@ -434,9 +432,9 @@ export default function DriverDashboardPage() {
                       <Skeleton className="h-6 w-16 rounded-full" />
                     </div>
                   ))}
-                </CardBody>
+                </div>
               )}
-            </Card>
+            </div>
           </section>
         </div>
       </div>

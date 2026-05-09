@@ -4,7 +4,6 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 
-// ── Icons ──────────────────────────────────────────────────────────────────────
 function HomeIcon({ filled }: { filled?: boolean }) {
   return (
     <svg width="22" height="22" viewBox="0 0 24 24" fill={filled ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth={filled ? 0 : 1.8} strokeLinecap="round" strokeLinejoin="round">
@@ -36,12 +35,11 @@ function DashboardIcon({ filled }: { filled?: boolean }) {
   );
 }
 
-// ── Config ────────────────────────────────────────────────────────────────────
 interface NavItem {
-  href:     string;
-  label:    string;
+  href:      string;
+  label:     string;
   featured?: boolean;
-  icon:     (filled: boolean) => React.ReactNode;
+  icon:      (filled: boolean) => React.ReactNode;
 }
 
 const CUSTOMER_NAV: NavItem[] = [
@@ -63,7 +61,7 @@ export function BottomNav({ role }: Props) {
 
   return (
     <nav
-      className="fixed inset-x-0 bottom-0 z-30 border-t border-gray-100 bg-white/95 backdrop-blur-md md:hidden"
+      className="fixed inset-x-0 bottom-0 z-30 border-t border-gray-100 dark:border-gray-800 bg-white/95 dark:bg-gray-950/95 backdrop-blur-md md:hidden"
       style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
     >
       <div className="flex items-center h-16">
@@ -91,7 +89,7 @@ export function BottomNav({ role }: Props) {
                     <path d="M12 5v14M5 12h14" />
                   </svg>
                 </span>
-                <span className={cn('text-[10px] font-semibold', active ? 'text-brand-600' : 'text-gray-400')}>
+                <span className={cn('text-[10px] font-semibold', active ? 'text-brand-600 dark:text-brand-400' : 'text-gray-400 dark:text-gray-500')}>
                   {item.label}
                 </span>
               </Link>
@@ -104,7 +102,7 @@ export function BottomNav({ role }: Props) {
               href={item.href as any} // eslint-disable-line @typescript-eslint/no-explicit-any
               className={cn(
                 'flex flex-1 flex-col items-center gap-1 py-2 px-3 transition-colors',
-                active ? 'text-brand-600' : 'text-gray-400 hover:text-gray-600',
+                active ? 'text-brand-600 dark:text-brand-400' : 'text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300',
               )}
             >
               {item.icon(active)}

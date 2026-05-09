@@ -1,6 +1,5 @@
 'use client';
 
-import { Card, CardBody } from '@/components/ui/Card';
 import type { BookingDriver, BookingTruck } from '@/lib/api/bookings';
 
 interface Props {
@@ -13,8 +12,8 @@ export function DriverInfoCard({ driver, truck }: Props) {
   const rating  = Number(driver.ratingAvg);
 
   return (
-    <Card className="animate-slide-up">
-      <CardBody className="flex items-center gap-4 py-4">
+    <div className="rounded-2xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-950 animate-slide-up">
+      <div className="flex items-center gap-4 px-5 py-4 sm:px-6">
         {/* Avatar */}
         <div className="relative shrink-0">
           {driver.user.avatarUrl ? (
@@ -22,33 +21,33 @@ export function DriverInfoCard({ driver, truck }: Props) {
             <img
               src={driver.user.avatarUrl}
               alt={driver.user.fullName}
-              className="size-14 rounded-full object-cover ring-2 ring-white shadow-soft"
+              className="size-14 rounded-full object-cover ring-2 ring-white dark:ring-gray-800 shadow-soft"
             />
           ) : (
-            <div className="grid size-14 place-items-center rounded-full bg-brand-600 text-lg font-semibold text-white shadow-soft">
+            <div className="grid size-14 place-items-center rounded-full bg-brand-600 text-lg font-bold text-white shadow-soft">
               {initial}
             </div>
           )}
           <span
             aria-hidden
-            className="absolute -bottom-0.5 -right-0.5 size-3.5 rounded-full border-2 border-white bg-emerald-500"
+            className="absolute -bottom-0.5 -right-0.5 size-3.5 rounded-full border-2 border-white dark:border-gray-950 bg-emerald-500"
           />
         </div>
 
         {/* Info */}
         <div className="min-w-0 flex-1">
-          <p className="font-semibold text-zinc-900 truncate">{driver.user.fullName}</p>
-          <p className="text-xs text-zinc-500 mt-0.5">
+          <p className="font-semibold text-gray-900 dark:text-white truncate">{driver.user.fullName}</p>
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
             {rating > 0
               ? `${rating.toFixed(1)} ★ · ${driver.totalTrips} ${driver.totalTrips === 1 ? 'trip' : 'trips'}`
               : `New driver · ${driver.totalTrips} trips`}
           </p>
           {truck && (
-            <p className="mt-1 inline-flex items-center gap-1 rounded-lg bg-zinc-100 px-2 py-0.5 text-xs text-zinc-700">
+            <p className="mt-1.5 inline-flex items-center gap-1 rounded-lg bg-gray-100 dark:bg-gray-800 px-2 py-0.5 text-xs text-gray-700 dark:text-gray-300">
               <span className="font-mono font-medium">{truck.plateNumber}</span>
-              <span className="text-zinc-400">·</span>
+              <span className="text-gray-400">·</span>
               <span className="capitalize">{truck.type.replace('_', ' ')}</span>
-              {truck.model ? <><span className="text-zinc-400">·</span><span>{truck.model}</span></> : null}
+              {truck.model ? <><span className="text-gray-400">·</span><span>{truck.model}</span></> : null}
             </p>
           )}
         </div>
@@ -56,7 +55,7 @@ export function DriverInfoCard({ driver, truck }: Props) {
         {/* Call button */}
         <a
           href={`tel:${driver.user.phone}`}
-          className="flex shrink-0 items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-medium text-white shadow-soft transition hover:bg-emerald-700 active:scale-95"
+          className="flex shrink-0 items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white shadow-soft transition hover:bg-emerald-700 active:scale-95"
           aria-label={`Call ${driver.user.fullName}`}
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
@@ -64,7 +63,7 @@ export function DriverInfoCard({ driver, truck }: Props) {
           </svg>
           Call
         </a>
-      </CardBody>
-    </Card>
+      </div>
+    </div>
   );
 }

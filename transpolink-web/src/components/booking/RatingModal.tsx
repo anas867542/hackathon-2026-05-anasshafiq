@@ -12,12 +12,12 @@ interface Props {
 }
 
 export function RatingModal({ bookingId, revieweeName, onDone }: Props) {
-  const [hovered,   setHovered]   = useState(0);
-  const [selected,  setSelected]  = useState(0);
-  const [comment,   setComment]   = useState('');
-  const [submitting,setSubmitting]= useState(false);
-  const [error,     setError]     = useState<string | null>(null);
-  const [done,      setDone]      = useState(false);
+  const [hovered,    setHovered]    = useState(0);
+  const [selected,   setSelected]   = useState(0);
+  const [comment,    setComment]    = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [error,      setError]      = useState<string | null>(null);
+  const [done,       setDone]       = useState(false);
 
   const display = hovered || selected;
   const labels  = ['', 'Poor', 'Fair', 'Good', 'Very good', 'Excellent'];
@@ -37,20 +37,20 @@ export function RatingModal({ bookingId, revieweeName, onDone }: Props) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="w-full max-w-sm rounded-3xl bg-white p-6 border border-gray-100 shadow-floating animate-scale-in">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 dark:bg-black/70 p-4">
+      <div className="w-full max-w-sm rounded-3xl bg-white dark:bg-gray-950 p-6 border border-gray-100 dark:border-gray-800 shadow-floating animate-scale-in">
         {done ? (
           <div className="space-y-4 text-center py-4">
             <div className="text-5xl">⭐</div>
-            <p className="text-lg font-bold text-gray-900">Thanks for your review!</p>
-            <p className="text-sm text-gray-500">Your feedback helps improve the platform.</p>
+            <p className="text-lg font-bold text-gray-900 dark:text-white">Thanks for your review!</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400">Your feedback helps improve the platform.</p>
             <Button variant="brand" className="w-full" onClick={onDone}>Done</Button>
           </div>
         ) : (
           <div className="space-y-5">
             <div className="text-center">
-              <p className="text-xs font-semibold uppercase tracking-wider text-gray-400">Rate your trip</p>
-              <p className="mt-1 text-lg font-bold text-gray-900">{revieweeName}</p>
+              <p className="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">Rate your trip</p>
+              <p className="mt-1 text-lg font-bold text-gray-900 dark:text-white">{revieweeName}</p>
             </div>
 
             {/* Stars */}
@@ -64,31 +64,32 @@ export function RatingModal({ bookingId, revieweeName, onDone }: Props) {
                   className="text-4xl transition-transform hover:scale-110 focus:outline-none active:scale-95"
                   aria-label={`${star} star${star > 1 ? 's' : ''}`}
                 >
-                  <span className={display >= star ? 'text-amber-400' : 'text-gray-200'}>★</span>
+                  <span className={display >= star ? 'text-amber-400' : 'text-gray-200 dark:text-gray-700'}>★</span>
                 </button>
               ))}
             </div>
 
-            <p className="min-h-[1.25rem] text-center text-sm font-semibold text-gray-600">
+            <p className="min-h-[1.25rem] text-center text-sm font-semibold text-gray-600 dark:text-gray-400">
               {display > 0 ? labels[display] : ''}
             </p>
 
-            {/* Comment */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                Comment <span className="font-normal text-gray-400">(optional)</span>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+                Comment <span className="font-normal text-gray-400 dark:text-gray-500">(optional)</span>
               </label>
               <textarea
                 rows={3}
                 value={comment}
                 onChange={(e) => setComment(e.target.value)}
                 placeholder="Tell us about your experience…"
-                className="block w-full resize-none rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 placeholder-gray-400 focus:border-brand-500 focus:ring-0 focus:shadow-input-focus focus:outline-none"
+                className="block w-full resize-none rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-4 py-3 text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-600 focus:border-brand-500 focus:ring-0 focus:outline-none"
               />
             </div>
 
             {error && (
-              <p className="rounded-2xl bg-red-50 border border-red-100 px-4 py-3 text-sm text-red-700">{error}</p>
+              <div className="rounded-xl border border-red-100 dark:border-red-900 bg-red-50 dark:bg-red-950/50 px-4 py-3 text-sm text-red-700 dark:text-red-400">
+                {error}
+              </div>
             )}
 
             <div className="flex gap-3">
