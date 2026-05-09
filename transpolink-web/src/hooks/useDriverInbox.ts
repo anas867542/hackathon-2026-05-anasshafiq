@@ -49,11 +49,15 @@ export function useDriverInbox(token: string | null) {
     };
   }, [token]);
 
-  // Sweep expired offers every second
+  // Sweep expired offers every second — skips work when inbox is already empty
   useEffect(() => {
     const i = window.setInterval(() => {
-      const now = Date.now();
-      setInbox((prev) => prev.filter((o) => new Date(o.expiresAt).getTime() > now));
+      setInbox((prev) => {
+        if (prev.length === 0) return prev;
+        const now = Date.now();
+        const next = prev.filter((o) => new Date(o.expiresAt).getTime() > now);
+        return next.length === prev.length ? prev : next;
+      });
     }, 1000);
     return () => window.clearInterval(i);
   }, []);

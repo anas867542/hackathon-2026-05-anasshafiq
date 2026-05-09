@@ -5,6 +5,8 @@ import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { bookingsApi, Booking } from '@/lib/api/bookings';
 
+type DriverStatusKey = 'online' | 'on_trip' | 'offline' | 'suspended' | 'active';
+
 interface DriverSummary {
   id: string;
   fullName: string;
@@ -14,10 +16,12 @@ interface DriverSummary {
   ratingCount: number;
   lastTrip: string;
   vehicleTypes: Set<string>;
+  status: DriverStatusKey;
 }
 
 const STATUS_COLORS: Record<string, string> = {
   online:    'bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-400',
+  active:    'bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-400',
   on_trip:   'bg-brand-100 dark:bg-brand-900/50 text-brand-700 dark:text-brand-400',
   offline:   'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400',
   suspended: 'bg-red-100 dark:bg-red-900/50 text-red-700 dark:text-red-400',
@@ -42,6 +46,7 @@ export default function DriversPage() {
             if (b.createdAt > existing.lastTrip) existing.lastTrip = b.createdAt;
             if (b.vehicleType) existing.vehicleTypes.add(b.vehicleType);
           } else {
+            const isActive = ['accepted', 'arrived', 'in_progress'].includes(b.status);
             map.set(b.driverId, {
               id: b.driverId,
               fullName: b.driver.user.fullName,
@@ -51,6 +56,7 @@ export default function DriversPage() {
               ratingCount: b.driver.ratingCount ?? 0,
               lastTrip: b.createdAt,
               vehicleTypes: new Set(b.vehicleType ? [b.vehicleType] : []),
+              status: isActive ? 'on_trip' : 'active',
             });
           }
         });
@@ -167,8 +173,8 @@ export default function DriversPage() {
                       <p className="text-xs text-gray-500 dark:text-gray-400">{driver.phone}</p>
                     </div>
                   </div>
-                  <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${STATUS_COLORS.online}`}>
-                    Active
+                  <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${STATUS_COLORS[driver.status] ?? STATUS_COLORS.offline}`}>
+                    {driver.status === 'on_trip' ? 'On trip' : driver.status === 'active' ? 'Active' : driver.status.charAt(0).toUpperCase() + driver.status.slice(1)}
                   </span>
                 </div>
 

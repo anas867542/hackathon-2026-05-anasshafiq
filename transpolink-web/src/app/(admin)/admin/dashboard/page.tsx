@@ -59,6 +59,20 @@ export default function AdminDashboardPage() {
       }
     : null;
 
+  const fleetStats = bookings
+    ? {
+        inTransit:  bookings.filter((b) => b.status === 'in_progress').length,
+        arriving:   bookings.filter((b) => b.status === 'arrived').length,
+        pending:    bookings.filter((b) => b.status === 'accepted').length,
+      }
+    : null;
+
+  const todayRevenue = bookings
+    ? bookings
+        .filter((b) => b.status === 'completed')
+        .reduce((sum, b) => sum + Number(b.finalFare ?? b.estimatedFare ?? 0), 0)
+    : null;
+
   const totalPages = Math.ceil(total / PAGE_SIZE);
 
   return (
@@ -81,8 +95,8 @@ export default function AdminDashboardPage() {
               <KpiCard
                 label="Total bookings"
                 value={total.toString()}
-                delta="+12% this week"
-                deltaPositive
+                delta={`${counts.pending} pending`}
+                deltaPositive={counts.pending === 0}
                 icon="📦"
                 color="brand"
               />
@@ -130,39 +144,60 @@ export default function AdminDashboardPage() {
           <div className="flex flex-col gap-4">
             <div className="rounded-2xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-950 p-5">
               <p className="mb-4 text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">
-                Fleet status
+                Active bookings
               </p>
-              {[
-                { label: 'Available', count: 12, color: 'bg-emerald-500' },
-                { label: 'In transit', count: 4, color: 'bg-brand-500' },
-                { label: 'Arriving', count: 2, color: 'bg-amber-500' },
-                { label: 'Offline', count: 8, color: 'bg-gray-300 dark:bg-gray-700' },
-              ].map((item) => (
-                <div key={item.label} className="flex items-center justify-between py-2 border-b border-gray-50 dark:border-gray-800/60 last:border-none">
-                  <div className="flex items-center gap-2.5">
-                    <span className={`size-2 rounded-full ${item.color}`} />
-                    <span className="text-sm text-gray-600 dark:text-gray-400">{item.label}</span>
-                  </div>
-                  <span className="text-sm font-semibold text-gray-900 dark:text-white">{item.count}</span>
+              {fleetStats === null ? (
+                <div className="space-y-2">
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="flex items-center justify-between py-2">
+                      <Skeleton className="h-3 w-20" />
+                      <Skeleton className="h-3 w-6" />
+                    </div>
+                  ))}
                 </div>
-              ))}
+              ) : (
+                [
+                  { label: 'En route',  count: fleetStats.inTransit, color: 'bg-brand-500' },
+                  { label: 'Arriving',  count: fleetStats.arriving,  color: 'bg-amber-500' },
+                  { label: 'Accepted',  count: fleetStats.pending,   color: 'bg-emerald-500' },
+                ].map((item) => (
+                  <div key={item.label} className="flex items-center justify-between py-2 border-b border-gray-50 dark:border-gray-800/60 last:border-none">
+                    <div className="flex items-center gap-2.5">
+                      <span className={`size-2 rounded-full ${item.color}`} />
+                      <span className="text-sm text-gray-600 dark:text-gray-400">{item.label}</span>
+                    </div>
+                    <span className="text-sm font-semibold text-gray-900 dark:text-white">{item.count}</span>
+                  </div>
+                ))
+              )}
             </div>
 
             <div className="rounded-2xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-950 p-5">
               <p className="mb-4 text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">
-                Today's summary
+                Page summary
               </p>
-              {[
-                { label: 'New bookings', value: '24' },
-                { label: 'Revenue', value: 'PKR 48,200' },
-                { label: 'Avg. match time', value: '43 s' },
-                { label: 'On-time rate', value: '94%' },
-              ].map((item) => (
-                <div key={item.label} className="flex items-center justify-between py-2 border-b border-gray-50 dark:border-gray-800/60 last:border-none">
-                  <span className="text-sm text-gray-500 dark:text-gray-400">{item.label}</span>
-                  <span className="text-sm font-semibold text-gray-900 dark:text-white">{item.value}</span>
+              {bookings === null ? (
+                <div className="space-y-2">
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="flex items-center justify-between py-2">
+                      <Skeleton className="h-3 w-24" />
+                      <Skeleton className="h-3 w-16" />
+                    </div>
+                  ))}
                 </div>
-              ))}
+              ) : (
+                [
+                  { label: 'Showing bookings', value: bookings.length.toString() },
+                  { label: 'Total (all pages)', value: total.toString() },
+                  { label: 'Page revenue',      value: formatCurrency(todayRevenue ?? 0) },
+                  { label: 'Completion rate',   value: total > 0 ? `${Math.round(((counts?.completed ?? 0) / total) * 100)}%` : '—' },
+                ].map((item) => (
+                  <div key={item.label} className="flex items-center justify-between py-2 border-b border-gray-50 dark:border-gray-800/60 last:border-none">
+                    <span className="text-sm text-gray-500 dark:text-gray-400">{item.label}</span>
+                    <span className="text-sm font-semibold text-gray-900 dark:text-white">{item.value}</span>
+                  </div>
+                ))
+              )}
             </div>
           </div>
         </div>

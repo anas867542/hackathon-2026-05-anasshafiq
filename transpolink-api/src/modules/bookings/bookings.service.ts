@@ -313,23 +313,18 @@ export class BookingsService {
         data: { status: BookingStatus.completed, completedAt: new Date() },
       });
 
-      // Increment driver trip count and earnings
+      // Increment driver trip count and earnings, and reset status — all in one atomic write
       const fare = Number(updated.finalFare ?? updated.estimatedFare ?? 0);
       await tx.driver.update({
         where: { id: actor.driverId! },
         data: {
           totalTrips: { increment: 1 },
           totalEarnings: { increment: new Prisma.Decimal(fare.toFixed(2)) },
+          status: 'online',
         },
       });
 
       return updated;
-    });
-
-    // Driver is now available for new bookings
-    await this.prisma.driver.update({
-      where: { id: actor.driverId! },
-      data: { status: 'online' },
     });
 
     this.tracking.emitBookingStatus(id, BookingStatus.completed);

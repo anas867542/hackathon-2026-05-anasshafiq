@@ -35,6 +35,7 @@ export default function DriverTripPage() {
 
   const [booking, setBooking]   = useState<Booking | null>(null);
   const [error, setError]       = useState<string | null>(null);
+  const [transitioning, setTransitioning] = useState(false);
   const [enabled, setEnabled]   = useState(true);
   const [showRating, setShowRating] = useState(false);
 
@@ -84,16 +85,24 @@ export default function DriverTripPage() {
   const effectiveDriverPos = currentPosition ?? initialDriverPos ?? undefined;
 
   async function transition(action: 'arrive' | 'start' | 'complete') {
-    if (!booking) return;
-    const updated = await bookingsApi[action](booking.id);
-    setBooking(updated);
-    if (action === 'complete') {
-      reviewsApi.hasReviewed(booking.id)
-        .then(({ reviewed }) => {
-          if (!reviewed) setShowRating(true);
-          else router.replace('/driver/dashboard');
-        })
-        .catch(() => router.replace('/driver/dashboard'));
+    if (!booking || transitioning) return;
+    setTransitioning(true);
+    setError(null);
+    try {
+      const updated = await bookingsApi[action](booking.id);
+      setBooking(updated);
+      if (action === 'complete') {
+        reviewsApi.hasReviewed(booking.id)
+          .then(({ reviewed }) => {
+            if (!reviewed) setShowRating(true);
+            else router.replace('/driver/dashboard');
+          })
+          .catch(() => router.replace('/driver/dashboard'));
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Action failed. Please try again.');
+    } finally {
+      setTransitioning(false);
     }
   }
 
@@ -230,17 +239,17 @@ export default function DriverTripPage() {
             </div>
             <div className="px-5 pb-5 sm:px-6 space-y-3">
               {effectiveStatus === 'accepted' && (
-                <Button variant="brand" className="w-full" onClick={() => transition('arrive')}>
+                <Button variant="brand" className="w-full" isLoading={transitioning} onClick={() => transition('arrive')}>
                   Mark arrived at pickup
                 </Button>
               )}
               {effectiveStatus === 'arrived' && (
-                <Button variant="brand" className="w-full" onClick={() => transition('start')}>
+                <Button variant="brand" className="w-full" isLoading={transitioning} onClick={() => transition('start')}>
                   Start trip
                 </Button>
               )}
               {effectiveStatus === 'in_progress' && (
-                <Button variant="brand" className="w-full" onClick={() => transition('complete')}>
+                <Button variant="brand" className="w-full" isLoading={transitioning} onClick={() => transition('complete')}>
                   Complete trip
                 </Button>
               )}

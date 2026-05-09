@@ -238,20 +238,34 @@ export default function DriverDashboardPage() {
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {active.status === 'accepted' && (
-                    <Button size="sm" variant="secondary"
-                      onClick={async () => setActive(await bookingsApi.arrive(active.id))}>
+                    <Button size="sm" variant="secondary" isLoading={busy}
+                      onClick={async () => {
+                        setBusy(true);
+                        try { setActive(await bookingsApi.arrive(active.id)); }
+                        catch (e) { setError(e instanceof Error ? e.message : 'Failed to update trip'); }
+                        finally { setBusy(false); }
+                      }}>
                       Mark arrived
                     </Button>
                   )}
                   {active.status === 'arrived' && (
-                    <Button size="sm" variant="brand"
-                      onClick={async () => setActive(await bookingsApi.start(active.id))}>
+                    <Button size="sm" variant="brand" isLoading={busy}
+                      onClick={async () => {
+                        setBusy(true);
+                        try { setActive(await bookingsApi.start(active.id)); }
+                        catch (e) { setError(e instanceof Error ? e.message : 'Failed to start trip'); }
+                        finally { setBusy(false); }
+                      }}>
                       Start trip
                     </Button>
                   )}
                   {active.status === 'in_progress' && (
-                    <Button size="sm" variant="brand"
-                      onClick={async () => { await bookingsApi.complete(active.id); router.push('/driver/dashboard'); }}>
+                    <Button size="sm" variant="brand" isLoading={busy}
+                      onClick={async () => {
+                        setBusy(true);
+                        try { await bookingsApi.complete(active.id); router.push('/driver/dashboard'); }
+                        catch (e) { setError(e instanceof Error ? e.message : 'Failed to complete trip'); setBusy(false); }
+                      }}>
                       Complete trip
                     </Button>
                   )}
@@ -304,7 +318,8 @@ export default function DriverDashboardPage() {
               <ul className="space-y-3">
                 {inbox.map((o) => {
                   const expiresMs   = new Date(o.expiresAt).getTime();
-                  const totalMs     = 30_000;
+                  // TTL matches REQUEST_TTL_SECONDS=60 on the backend; cap at 60 s display window
+                  const totalMs     = 60_000;
                   const remainingMs = Math.max(0, expiresMs - now);
                   const secondsLeft = Math.ceil(remainingMs / 1000);
                   const pct         = Math.min(100, (remainingMs / totalMs) * 100);
