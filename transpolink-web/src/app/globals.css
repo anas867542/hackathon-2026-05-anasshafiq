@@ -16,6 +16,11 @@
     -moz-osx-font-smoothing: grayscale;
   }
 
+  html.dark, html.dark body {
+    background-color: #030712;
+    color: #f9fafb;
+  }
+
   *::selection {
     background-color: #0d9488;
     color: #ffffff;
