@@ -1,4 +1,5 @@
 # ─── Stage 1: production dependencies ────────────────────────────────────────
+# cache-bust: 2026-05-08
 FROM node:20-alpine AS deps
 WORKDIR /app
 COPY package.json package-lock.json ./
