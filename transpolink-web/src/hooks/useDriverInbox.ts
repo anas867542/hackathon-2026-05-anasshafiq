@@ -12,7 +12,16 @@ import {
 export interface InboxItem extends NewBookingRequestEvent {
   /** True once the driver has submitted a bid for this booking. */
   bidSubmitted?: boolean;
+  /**
+   * Client-side timestamp (epoch ms) set when the item was first added to the
+   * inbox. Used by the sweep timer instead of `expiresAt` so that any clock
+   * skew or timezone weirdness in the server's `expiresAt` can't cause a fresh
+   * booking to be swept away the moment it arrives.
+   */
+  receivedAt?: number;
 }
+
+const CLIENT_TTL_MS = 5 * 60 * 1000;
 
 const INBOX_STORAGE_KEY = 'driver.inbox';
 
@@ -23,7 +32,10 @@ function loadPersistedInbox(): InboxItem[] {
     if (!raw) return [];
     const items = JSON.parse(raw) as InboxItem[];
     const now = Date.now();
-    return items.filter((item) => new Date(item.expiresAt).getTime() > now);
+    return items.filter((item) => {
+      const stamp = item.receivedAt ?? now;
+      return now - stamp < CLIENT_TTL_MS;
+    });
   } catch {
     return [];
   }
@@ -51,7 +63,9 @@ export function useDriverInbox(token: string | null) {
 
     const onNew = (e: NewBookingRequestEvent) => {
       setInbox((prev) =>
-        prev.find((b) => b.bookingId === e.bookingId) ? prev : [e, ...prev],
+        prev.find((b) => b.bookingId === e.bookingId)
+          ? prev
+          : [{ ...e, receivedAt: Date.now() }, ...prev],
       );
     };
     const onAccepted = (e: BidAcceptedEvent) => {
@@ -85,13 +99,19 @@ export function useDriverInbox(token: string | null) {
     }
   }, [token]);
 
-  // Sweep expired offers every second — skips work when inbox is already empty
+  // Sweep client-expired offers every second. Use the client-stamped `receivedAt`
+  // (set when the item was first added) instead of the server's `expiresAt`. This
+  // makes the sweep robust against clock skew or timezone issues that could
+  // otherwise cause a fresh booking to look "already expired" the moment it arrives.
   useEffect(() => {
     const i = window.setInterval(() => {
       setInbox((prev) => {
         if (prev.length === 0) return prev;
         const now = Date.now();
-        const next = prev.filter((o) => new Date(o.expiresAt).getTime() > now);
+        const next = prev.filter((o) => {
+          const stamp = o.receivedAt ?? now;
+          return now - stamp < CLIENT_TTL_MS;
+        });
         return next.length === prev.length ? prev : next;
       });
     }, 1000);
@@ -101,7 +121,10 @@ export function useDriverInbox(token: string | null) {
   function mergeItems(items: NewBookingRequestEvent[]) {
     setInbox((prev) => {
       const known = new Set(prev.map((b) => b.bookingId));
-      const fresh = items.filter((b) => !known.has(b.bookingId));
+      const now = Date.now();
+      const fresh = items
+        .filter((b) => !known.has(b.bookingId))
+        .map((b) => ({ ...b, receivedAt: now } as InboxItem));
       return fresh.length === 0 ? prev : [...fresh, ...prev];
     });
   }

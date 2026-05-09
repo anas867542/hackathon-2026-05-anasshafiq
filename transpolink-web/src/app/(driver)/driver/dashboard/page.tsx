@@ -63,14 +63,20 @@ export default function DriverDashboardPage() {
     const fetchAvailable = () =>
       bookingsApi.getAvailable()
         .then((items) => {
-          const cutoff = Date.now() + 10_000;
-          const valid = items.filter((item) => new Date(item.expiresAt).getTime() > cutoff);
-          mergeItems(valid);
+          // If the server returned it, surface it — server-side already enforces the
+          // 4-min freshness window, so we don't need a client-side cutoff. Previously
+          // a client-side cutoff dropped bookings whose expiresAt parsed as past time
+          // (e.g., browser clock skew or unexpected timezone behavior).
+          mergeItems(items);
           setDebug({
             lastPoll: new Date().toLocaleTimeString(),
             lastCount: items.length,
             lastApiPayload: items.length > 0
-              ? items.map((i) => `${i.referenceCode}@${new Date(i.expiresAt).toLocaleTimeString()}`).join(', ')
+              ? items.map((i) => {
+                  const expMs = new Date(i.expiresAt).getTime();
+                  const remaining = Math.round((expMs - Date.now()) / 1000);
+                  return `${i.referenceCode} raw=${i.expiresAt} remaining=${remaining}s passes=${remaining > 10}`;
+                }).join(' | ')
               : 'empty',
           });
         })
@@ -333,7 +339,7 @@ export default function DriverDashboardPage() {
           {/* Debug strip — shows real-time poll status so we can see WHY inbox is empty */}
           {isOnline && (
             <div className="rounded-xl border border-amber-200 dark:border-amber-900 bg-amber-50 dark:bg-amber-950/40 px-3 py-2 text-[11px] font-mono text-amber-900 dark:text-amber-300 leading-snug">
-              <div>build: v0.1.4 · inbox.length={inbox.length}</div>
+              <div>build: v0.1.6 · inbox.length={inbox.length}</div>
               <div>lastPoll: {debug.lastPoll} · apiReturned={debug.lastCount}</div>
               <div className="break-all">payload: {debug.lastApiPayload}</div>
             </div>
@@ -379,9 +385,13 @@ export default function DriverDashboardPage() {
             ) : (
               <ul className="space-y-3">
                 {inbox.map((o) => {
-                  const expiresMs   = new Date(o.expiresAt).getTime();
-                  // TTL matches REQUEST_TTL_SECONDS=300 on the backend; cap at 300 s display window
+                  // Prefer client-stamped receivedAt + TTL over server's expiresAt for
+                  // countdown display, so any clock skew doesn't make a fresh booking
+                  // appear to have 0s remaining.
                   const totalMs     = 300_000;
+                  const expiresMs   = o.receivedAt
+                    ? o.receivedAt + totalMs
+                    : new Date(o.expiresAt).getTime();
                   const remainingMs = Math.max(0, expiresMs - now);
                   const secondsLeft = Math.ceil(remainingMs / 1000);
                   const pct         = Math.min(100, (remainingMs / totalMs) * 100);
