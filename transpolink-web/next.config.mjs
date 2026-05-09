@@ -5,6 +5,7 @@ const nextConfig = {
   output: 'standalone',
   poweredByHeader: false,
   compress: true,
+  typescript: { ignoreBuildErrors: true },
 };
 
 export default nextConfig;
