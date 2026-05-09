@@ -1,6 +1,6 @@
 {
   "name": "transpolink-api",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "TranspoLink — On-demand truck booking platform API",
   "private": true,
   "scripts": {
