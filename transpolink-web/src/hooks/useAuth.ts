@@ -19,12 +19,27 @@ export function useAuth() {
   useEffect(() => {
     setUser(session.getUser());
     setHydrated(true);
-    const onChange = () => setUser(session.getUser());
-    window.addEventListener('tl:session', onChange);
-    window.addEventListener('storage', onChange);
+
+    // Same-tab session changes (login, logout, token refresh in this tab)
+    const onSameTab = () => setUser(session.getUser());
+
+    // Cross-tab storage changes — only react if it's the SAME user or a logout.
+    // Ignoring logins from a different user prevents the customer tab's token
+    // refresh from overwriting the driver tab's session (and vice versa), which
+    // would cause AuthGuard to unmount and reset all React state.
+    const onOtherTab = () => {
+      const incoming = session.getUser();
+      setUser((prev) => {
+        if (prev && incoming && prev.id !== incoming.id) return prev;
+        return incoming;
+      });
+    };
+
+    window.addEventListener('tl:session', onSameTab);
+    window.addEventListener('storage', onOtherTab);
     return () => {
-      window.removeEventListener('tl:session', onChange);
-      window.removeEventListener('storage', onChange);
+      window.removeEventListener('tl:session', onSameTab);
+      window.removeEventListener('storage', onOtherTab);
     };
   }, []);
 

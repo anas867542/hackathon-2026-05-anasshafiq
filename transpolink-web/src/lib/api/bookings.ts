@@ -112,5 +112,5 @@ export const bookingsApi = {
 
   getLocations: (id: string) => api<TripLocation[]>(`/bookings/${id}/locations`),
 
-  getAvailable: () => api<NewBookingRequestEvent[]>('/bookings/available'),
+  getAvailable: () => api<NewBookingRequestEvent[]>('/bookings/available', { cache: 'no-store' }),
 };

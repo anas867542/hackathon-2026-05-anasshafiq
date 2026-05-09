@@ -64,7 +64,7 @@ export default function DriverDashboardPage() {
         })
         .catch(() => undefined);
     fetchAvailable();
-    const id = window.setInterval(fetchAvailable, 30_000);
+    const id = window.setInterval(fetchAvailable, 5_000);
     return () => window.clearInterval(id);
   }, [profile?.status, token]); // eslint-disable-line react-hooks/exhaustive-deps
 

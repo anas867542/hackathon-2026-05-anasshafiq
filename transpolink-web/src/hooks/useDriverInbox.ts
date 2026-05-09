@@ -14,12 +14,35 @@ export interface InboxItem extends NewBookingRequestEvent {
   bidSubmitted?: boolean;
 }
 
+const INBOX_STORAGE_KEY = 'driver.inbox';
+
+function loadPersistedInbox(): InboxItem[] {
+  if (typeof window === 'undefined') return [];
+  try {
+    const raw = sessionStorage.getItem(INBOX_STORAGE_KEY);
+    if (!raw) return [];
+    const items = JSON.parse(raw) as InboxItem[];
+    const now = Date.now();
+    return items.filter((item) => new Date(item.expiresAt).getTime() > now);
+  } catch {
+    return [];
+  }
+}
+
+function persistInbox(items: InboxItem[]) {
+  if (typeof window === 'undefined') return;
+  try {
+    sessionStorage.setItem(INBOX_STORAGE_KEY, JSON.stringify(items));
+  } catch { /* quota exceeded — ignore */ }
+}
+
 /**
  * Driver inbox: listens for incoming requests, lets the driver mark a request
  * as "bid submitted", and reacts to bid accept/reject events from the server.
+ * Inbox is persisted to sessionStorage so page remounts don't lose pending requests.
  */
 export function useDriverInbox(token: string | null) {
-  const [inbox, setInbox] = useState<InboxItem[]>([]);
+  const [inbox, setInbox] = useState<InboxItem[]>(loadPersistedInbox);
   const [winner, setWinner] = useState<BidAcceptedEvent | null>(null);
 
   useEffect(() => {
@@ -47,6 +70,19 @@ export function useDriverInbox(token: string | null) {
       socket.off(TrackingEvents.BidAccepted, onAccepted);
       socket.off(TrackingEvents.BidRejected, onRejected);
     };
+  }, [token]);
+
+  // Persist inbox to sessionStorage on every change so remounts restore it
+  useEffect(() => {
+    persistInbox(inbox);
+  }, [inbox]);
+
+  // Clear persisted inbox when token is removed (logout / session end)
+  useEffect(() => {
+    if (!token && typeof window !== 'undefined') {
+      sessionStorage.removeItem(INBOX_STORAGE_KEY);
+      setInbox([]);
+    }
   }, [token]);
 
   // Sweep expired offers every second — skips work when inbox is already empty
