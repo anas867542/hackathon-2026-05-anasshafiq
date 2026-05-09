@@ -50,6 +50,22 @@ export class DriversService {
     }
   }
 
+  async listAll(page = 1, pageSize = 50) {
+    const [items, total] = await this.prisma.$transaction([
+      this.prisma.driver.findMany({
+        orderBy: { createdAt: 'desc' },
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+        include: {
+          user: { select: { fullName: true, email: true, phone: true, avatarUrl: true } },
+          trucks: { select: { id: true, type: true, plateNumber: true, isActive: true, isPrimary: true } },
+        },
+      }),
+      this.prisma.driver.count(),
+    ]);
+    return { items, page, pageSize, total };
+  }
+
   async getMe(driverId: string) {
     const driver = await this.prisma.driver.findUnique({
       where: { id: driverId },

@@ -47,8 +47,27 @@ export interface DriverOnboardingInput {
   licenseDocUrl?: string;
 }
 
+export interface AdminDriverSummary {
+  id: string;
+  status: DriverStatus;
+  ratingAvg: string | number;
+  ratingCount: number;
+  totalTrips: number;
+  totalEarnings: string | number;
+  docStatus: string;
+  createdAt: string;
+  user: { fullName: string; email: string; phone: string; avatarUrl?: string | null };
+  trucks: Array<{ id: string; type: string; plateNumber: string; isActive: boolean; isPrimary: boolean }>;
+}
+
 export const driversApi = {
   me: () => api<DriverProfile>('/drivers/me'),
+
+  listAll: (page = 1, pageSize = 50) =>
+    api<{ items: AdminDriverSummary[]; total: number; page: number; pageSize: number }>(
+      '/drivers',
+      { query: { page, pageSize } },
+    ),
 
   submitOnboarding: (input: DriverOnboardingInput) =>
     api<{ id: string; docStatus: string }>('/drivers/me/onboarding', {

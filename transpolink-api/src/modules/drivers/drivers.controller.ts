@@ -6,6 +6,8 @@ import {
   Patch,
   Query,
   UseGuards,
+  ParseIntPipe,
+  DefaultValuePipe,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { UserRole } from '@prisma/client';
@@ -25,6 +27,15 @@ import { DriverOnboardingDto } from './dto/onboarding.dto';
 @Controller('drivers')
 export class DriversController {
   constructor(private readonly drivers: DriversService) {}
+
+  @Roles(UserRole.admin)
+  @Get()
+  listAll(
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
+    @Query('pageSize', new DefaultValuePipe(50), ParseIntPipe) pageSize: number,
+  ) {
+    return this.drivers.listAll(page, pageSize);
+  }
 
   @Roles(UserRole.driver)
   @Patch('me/onboarding')
