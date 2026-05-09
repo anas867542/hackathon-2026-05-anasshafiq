@@ -204,6 +204,25 @@ export class BookingsService {
     // Filter on updatedAt (not createdAt) so re-dispatched bookings get a fresh window.
     const since = new Date(Date.now() - (REQUEST_TTL_SECONDS - 60) * 1000);
 
+    // DIAGNOSTIC: list ALL pending non-scheduled bookings unfiltered, so we can see
+    // exactly which filter is dropping them.
+    const allPending = await this.prisma.booking.findMany({
+      where: {
+        status: BookingStatus.pending,
+        bookingType: { not: BookingType.scheduled },
+      },
+      select: {
+        id: true,
+        referenceCode: true,
+        vehicleType: true,
+        updatedAt: true,
+        pickupLat: true,
+        pickupLng: true,
+      },
+      orderBy: { updatedAt: 'desc' },
+      take: 5,
+    });
+
     const bookings = await this.prisma.booking.findMany({
       where: {
         status: BookingStatus.pending,
@@ -223,17 +242,19 @@ export class BookingsService {
       (b) => haversine(dLat, dLng, Number(b.pickupLat), Number(b.pickupLng)) <= SEARCH_RADIUS_KM,
     );
 
-    if (bookings.length > 0) {
-      const distances = bookings.map((b) => ({
-        ref: b.referenceCode,
-        type: b.vehicleType,
-        km: haversine(dLat, dLng, Number(b.pickupLat), Number(b.pickupLng)).toFixed(2),
-      }));
-      this.logger.log(
-        `getAvailableForDriver(${driverId}): pending=${bookings.length} within=${withinRange.length} ` +
-          `driverAt=(${dLat},${dLng}) trucks=[${truckTypes.join(',')}] dists=${JSON.stringify(distances)}`,
-      );
-    }
+    // Log every call so we can see the deltas in production
+    this.logger.log(
+      `getAvailable[${driverId.slice(0, 8)}]: ` +
+        `allPending=${allPending.length} typeFiltered=${bookings.length} withinRange=${withinRange.length} | ` +
+        `driverAt=(${dLat.toFixed(4)},${dLng.toFixed(4)}) trucks=[${truckTypes.join(',')}] | ` +
+        `since=${since.toISOString()} now=${new Date().toISOString()} | ` +
+        `pending=${JSON.stringify(allPending.map((b) => ({
+          ref: b.referenceCode,
+          type: b.vehicleType,
+          updated: b.updatedAt.toISOString(),
+          km: haversine(dLat, dLng, Number(b.pickupLat), Number(b.pickupLng)).toFixed(2),
+        })))}`,
+    );
 
     return withinRange.map((b) => ({
         bookingId: b.id,
