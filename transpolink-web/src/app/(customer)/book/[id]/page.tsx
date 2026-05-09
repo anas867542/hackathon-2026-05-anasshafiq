@@ -36,6 +36,8 @@ export default function CustomerTrackingPage() {
   const [booking,    setBooking]    = useState<Booking | null>(null);
   const [loadError,  setLoadError]  = useState<string | null>(null);
   const [cancelling, setCancelling] = useState(false);
+  const [resending,  setResending]  = useState(false);
+  const [resentAt,   setResentAt]   = useState<number | null>(null);
   const [showRating, setShowRating] = useState(false);
 
   useEffect(() => {
@@ -114,6 +116,21 @@ export default function CustomerTrackingPage() {
       setLoadError(e instanceof Error ? e.message : 'Failed to cancel booking.');
     } finally {
       setCancelling(false);
+    }
+  }
+
+  async function resend() {
+    if (!booking || resending) return;
+    setResending(true);
+    setLoadError(null);
+    try {
+      const updated = await bookingsApi.resend(booking.id);
+      setBooking(updated);
+      setResentAt(Date.now());
+    } catch (e) {
+      setLoadError(e instanceof Error ? e.message : 'Failed to resend request.');
+    } finally {
+      setResending(false);
     }
   }
 
@@ -295,7 +312,22 @@ export default function CustomerTrackingPage() {
                     </span>
                   </div>
 
-                  {['pending', 'accepted'].includes(booking.status) && (
+                  {liveStatus === 'pending' && (
+                    <div className="mt-2 space-y-2">
+                      {resentAt && Date.now() - resentAt < 6000 && (
+                        <p className="rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-100 dark:border-emerald-900 px-3 py-2 text-xs text-emerald-700 dark:text-emerald-400 animate-fade-in">
+                          ✓ Request re-sent to nearby drivers
+                        </p>
+                      )}
+                      <Button variant="brand" size="sm" className="w-full" isLoading={resending} onClick={resend}>
+                        Resend request
+                      </Button>
+                      <Button variant="danger" size="sm" className="w-full" isLoading={cancelling} onClick={cancel}>
+                        Cancel booking
+                      </Button>
+                    </div>
+                  )}
+                  {liveStatus === 'accepted' && (
                     <Button variant="danger" size="sm" className="mt-2 w-full" isLoading={cancelling} onClick={cancel}>
                       Cancel booking
                     </Button>

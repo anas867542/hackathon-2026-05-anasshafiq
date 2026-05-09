@@ -90,6 +90,12 @@ export class BookingsController {
     return this.bookings.complete(user, id);
   }
 
+  @Roles(UserRole.customer, UserRole.admin)
+  @Post(':id/resend')
+  resend(@CurrentUser() user: AuthUser, @Param('id', ParseUUIDPipe) id: string) {
+    return this.bookings.resend(user, id);
+  }
+
   @Roles(UserRole.customer, UserRole.driver, UserRole.admin)
   @Patch(':id/cancel')
   cancel(

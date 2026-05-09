@@ -154,6 +154,49 @@ export class BookingsService {
     }
   }
 
+  /**
+   * Customer-triggered manual resend. Only the booking's customer (or admin)
+   * can call this; only valid while the booking is still pending and has no
+   * driver assigned. Bumps updatedAt + re-runs the matching dispatch so nearby
+   * drivers see the request again.
+   */
+  async resend(actor: AuthUser, id: string) {
+    const booking = await this.prisma.booking.findUnique({
+      where: { id },
+      include: { customer: { select: { fullName: true } } },
+    });
+    if (!booking) throw new NotFoundException('Booking not found');
+    if (actor.role !== UserRole.admin && booking.customerId !== actor.id) {
+      throw new ForbiddenException('Cannot resend this booking');
+    }
+    if (booking.status !== BookingStatus.pending) {
+      throw new BadRequestException(
+        `Cannot resend a booking with status "${booking.status}"`,
+      );
+    }
+    if (booking.bookingType === BookingType.scheduled) {
+      throw new BadRequestException('Scheduled bookings dispatch automatically');
+    }
+
+    const updated = await this.prisma.booking.update({
+      where: { id },
+      data: { updatedAt: new Date() },
+      include: { customer: { select: { fullName: true } } },
+    });
+
+    this.logger.log(`Resending ${updated.referenceCode} (manual, by ${actor.role})`);
+    this.tracking.notifyUser(updated.customerId, 'booking:searching', {
+      bookingId: updated.id,
+      message: 'Searching again for nearby drivers…',
+    });
+
+    // scheduleRedispatch=false avoids stacking timers if the user clicks resend
+    // multiple times — the original dispatch's timer (if alive) will still fire.
+    await this.dispatchToNearbyDrivers(updated, updated.customer.fullName, false);
+
+    return updated;
+  }
+
   private async redispatchIfStillPending(bookingId: string) {
     const booking = await this.prisma.booking.findUnique({
       where: { id: bookingId },

@@ -103,6 +103,9 @@ export const bookingsApi = {
   cancel: (id: string, reason?: string) =>
     api<Booking>(`/bookings/${id}/cancel`, { method: 'PATCH', body: { reason } }),
 
+  resend: (id: string) =>
+    api<Booking>(`/bookings/${id}/resend`, { method: 'POST' }),
+
   accept: (id: string, truckId?: string) =>
     api<Booking>(`/bookings/${id}/accept`, { method: 'PATCH', body: { truckId } }),
 
