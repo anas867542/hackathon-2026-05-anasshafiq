@@ -185,10 +185,20 @@ export class BookingsService {
       where: { id: driverId },
       include: { trucks: { where: { isActive: true } } },
     });
-    if (!driver || driver.currentLat == null || driver.currentLng == null) return [];
+    if (!driver) {
+      this.logger.warn(`getAvailableForDriver: driver ${driverId} not found`);
+      return [];
+    }
+    if (driver.currentLat == null || driver.currentLng == null) {
+      this.logger.warn(`getAvailableForDriver: driver ${driverId} has no location (status=${driver.status})`);
+      return [];
+    }
 
     const truckTypes = driver.trucks.map((t) => t.type);
-    if (truckTypes.length === 0) return [];
+    if (truckTypes.length === 0) {
+      this.logger.warn(`getAvailableForDriver: driver ${driverId} has no active trucks`);
+      return [];
+    }
 
     // Only return bookings with at least 60 s of TTL remaining.
     // Filter on updatedAt (not createdAt) so re-dispatched bookings get a fresh window.
@@ -209,9 +219,23 @@ export class BookingsService {
     const dLat = Number(driver.currentLat);
     const dLng = Number(driver.currentLng);
 
-    return bookings
-      .filter((b) => haversine(dLat, dLng, Number(b.pickupLat), Number(b.pickupLng)) <= SEARCH_RADIUS_KM)
-      .map((b) => ({
+    const withinRange = bookings.filter(
+      (b) => haversine(dLat, dLng, Number(b.pickupLat), Number(b.pickupLng)) <= SEARCH_RADIUS_KM,
+    );
+
+    if (bookings.length > 0) {
+      const distances = bookings.map((b) => ({
+        ref: b.referenceCode,
+        type: b.vehicleType,
+        km: haversine(dLat, dLng, Number(b.pickupLat), Number(b.pickupLng)).toFixed(2),
+      }));
+      this.logger.log(
+        `getAvailableForDriver(${driverId}): pending=${bookings.length} within=${withinRange.length} ` +
+          `driverAt=(${dLat},${dLng}) trucks=[${truckTypes.join(',')}] dists=${JSON.stringify(distances)}`,
+      );
+    }
+
+    return withinRange.map((b) => ({
         bookingId: b.id,
         referenceCode: b.referenceCode,
         bookingType: b.bookingType,

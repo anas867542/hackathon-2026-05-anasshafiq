@@ -35,6 +35,12 @@ export default function DriverDashboardPage() {
     return () => window.clearInterval(id);
   }, []);
 
+  const [debug, setDebug] = useState<{ lastPoll: string; lastCount: number; lastApiPayload: string }>({
+    lastPoll: '—',
+    lastCount: 0,
+    lastApiPayload: '—',
+  });
+
   const { inbox, mergeItems, remove, markBidSubmitted, winner, clearWinner } = useDriverInbox(token);
 
   useEffect(() => {
@@ -57,12 +63,20 @@ export default function DriverDashboardPage() {
     const fetchAvailable = () =>
       bookingsApi.getAvailable()
         .then((items) => {
-          // Drop items that expire within 10 s — network latency could make them
-          // flash then immediately disappear via the sweep timer.
           const cutoff = Date.now() + 10_000;
-          mergeItems(items.filter((item) => new Date(item.expiresAt).getTime() > cutoff));
+          const valid = items.filter((item) => new Date(item.expiresAt).getTime() > cutoff);
+          mergeItems(valid);
+          setDebug({
+            lastPoll: new Date().toLocaleTimeString(),
+            lastCount: items.length,
+            lastApiPayload: items.length > 0
+              ? items.map((i) => `${i.referenceCode}@${new Date(i.expiresAt).toLocaleTimeString()}`).join(', ')
+              : 'empty',
+          });
         })
-        .catch(() => undefined);
+        .catch((e) => {
+          setDebug((d) => ({ ...d, lastPoll: `ERROR ${(e as Error).message}` }));
+        });
     fetchAvailable();
     const id = window.setInterval(fetchAvailable, 5_000);
     return () => window.clearInterval(id);
@@ -313,6 +327,15 @@ export default function DriverDashboardPage() {
                   </Link>
                 </div>
               </div>
+            </div>
+          )}
+
+          {/* Debug strip — shows real-time poll status so we can see WHY inbox is empty */}
+          {isOnline && (
+            <div className="rounded-xl border border-amber-200 dark:border-amber-900 bg-amber-50 dark:bg-amber-950/40 px-3 py-2 text-[11px] font-mono text-amber-900 dark:text-amber-300 leading-snug">
+              <div>build: v0.1.4 · inbox.length={inbox.length}</div>
+              <div>lastPoll: {debug.lastPoll} · apiReturned={debug.lastCount}</div>
+              <div className="break-all">payload: {debug.lastApiPayload}</div>
             </div>
           )}
 
