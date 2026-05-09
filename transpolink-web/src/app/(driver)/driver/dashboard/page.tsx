@@ -35,7 +35,7 @@ export default function DriverDashboardPage() {
     return () => window.clearInterval(id);
   }, []);
 
-  const { inbox, remove, markBidSubmitted, winner, clearWinner } = useDriverInbox(token);
+  const { inbox, mergeItems, remove, markBidSubmitted, winner, clearWinner } = useDriverInbox(token);
 
   useEffect(() => {
     if (!winner) return;
@@ -49,6 +49,16 @@ export default function DriverDashboardPage() {
       setActive(res.items.find((b) => ['accepted', 'arrived', 'in_progress'].includes(b.status)) ?? null),
     );
   }, []);
+
+  // Poll available bookings from REST every 30 s when online — fallback in case a
+  // WebSocket event was missed (e.g., driver connected after booking was dispatched).
+  useEffect(() => {
+    if (!profile || profile.status !== 'online' || !token) return;
+    const fetch = () => bookingsApi.getAvailable().then(mergeItems).catch(() => undefined);
+    fetch();
+    const id = window.setInterval(fetch, 30_000);
+    return () => window.clearInterval(id);
+  }, [profile?.status, token]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Reverse-geocode the driver's current coordinates into a readable address
   useEffect(() => {

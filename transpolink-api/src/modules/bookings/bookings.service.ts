@@ -140,6 +140,55 @@ export class BookingsService {
   }
 
   // ============================================================
+  // AVAILABLE — driver polling fallback
+  // ============================================================
+  async getAvailableForDriver(driverId: string) {
+    const driver = await this.prisma.driver.findUnique({
+      where: { id: driverId },
+      include: { trucks: { where: { isActive: true } } },
+    });
+    if (!driver || driver.currentLat == null || driver.currentLng == null) return [];
+
+    const truckTypes = driver.trucks.map((t) => t.type);
+    if (truckTypes.length === 0) return [];
+
+    const since = new Date(Date.now() - 5 * 60 * 1000);
+
+    const bookings = await this.prisma.booking.findMany({
+      where: {
+        status: BookingStatus.pending,
+        bookingType: { not: BookingType.scheduled },
+        vehicleType: { in: truckTypes },
+        createdAt: { gte: since },
+      },
+      include: { customer: { select: { fullName: true } } },
+      orderBy: { createdAt: 'desc' },
+      take: 20,
+    });
+
+    const dLat = Number(driver.currentLat);
+    const dLng = Number(driver.currentLng);
+
+    return bookings
+      .filter((b) => haversine(dLat, dLng, Number(b.pickupLat), Number(b.pickupLng)) <= SEARCH_RADIUS_KM)
+      .map((b) => ({
+        bookingId: b.id,
+        referenceCode: b.referenceCode,
+        bookingType: b.bookingType,
+        vehicleType: b.vehicleType,
+        pickup: { address: b.pickupAddress, lat: Number(b.pickupLat), lng: Number(b.pickupLng) },
+        dropoff: { address: b.dropoffAddress, lat: Number(b.dropoffLat), lng: Number(b.dropoffLng) },
+        distanceKm: Number(b.distanceKm ?? 0),
+        durationMinutes: b.durationMinutes,
+        estimatedFare: Number(b.estimatedFare ?? 0),
+        goodsDescription: b.goodsDescription ?? null,
+        estimatedWeightKg: b.estimatedWeightKg ?? null,
+        customerName: b.customer.fullName,
+        expiresAt: new Date(b.createdAt.getTime() + 5 * 60 * 1000).toISOString(),
+      }));
+  }
+
+  // ============================================================
   // READ
   // ============================================================
   async list(actor: AuthUser, query: ListBookingsDto) {

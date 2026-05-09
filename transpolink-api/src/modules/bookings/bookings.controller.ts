@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  ForbiddenException,
   Get,
   Param,
   ParseUUIDPipe,
@@ -39,6 +40,13 @@ export class BookingsController {
   @Get()
   list(@CurrentUser() user: AuthUser, @Query() query: ListBookingsDto) {
     return this.bookings.list(user, query);
+  }
+
+  @Roles(UserRole.driver)
+  @Get('available')
+  getAvailable(@CurrentUser() user: AuthUser) {
+    if (!user.driverId) throw new ForbiddenException('Driver profile required');
+    return this.bookings.getAvailableForDriver(user.driverId);
   }
 
   @Roles(UserRole.customer, UserRole.driver, UserRole.admin)

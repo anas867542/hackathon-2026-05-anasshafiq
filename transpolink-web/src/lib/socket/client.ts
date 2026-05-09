@@ -13,7 +13,11 @@ let socket: Socket | null = null;
  *   layer too (avoids a stale-token disconnect loop).
  */
 export function getSocket(token: string): Socket {
-  const url = process.env.NEXT_PUBLIC_API_WS_URL ?? 'http://localhost:4000';
+  // Derive WS base URL from the API URL if the dedicated WS env var is not set.
+  // e.g. https://api.railway.app/api/v1 → https://api.railway.app
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000/api/v1';
+  const derivedWsUrl = apiUrl.replace(/\/api\/v1\/?$/, '').replace(/\/api\/?$/, '');
+  const url = process.env.NEXT_PUBLIC_API_WS_URL ?? derivedWsUrl;
 
   if (socket) {
     // Keep auth fresh; socket.io's built-in reconnect loop will pick it up.

@@ -62,6 +62,14 @@ export function useDriverInbox(token: string | null) {
     return () => window.clearInterval(i);
   }, []);
 
+  function mergeItems(items: NewBookingRequestEvent[]) {
+    setInbox((prev) => {
+      const known = new Set(prev.map((b) => b.bookingId));
+      const fresh = items.filter((b) => !known.has(b.bookingId));
+      return fresh.length === 0 ? prev : [...fresh, ...prev];
+    });
+  }
+
   function remove(bookingId: string) {
     setInbox((prev) => prev.filter((o) => o.bookingId !== bookingId));
   }
@@ -76,5 +84,5 @@ export function useDriverInbox(token: string | null) {
     setWinner(null);
   }
 
-  return { inbox, remove, markBidSubmitted, winner, clearWinner };
+  return { inbox, mergeItems, remove, markBidSubmitted, winner, clearWinner };
 }

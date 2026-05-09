@@ -1,4 +1,5 @@
 import { api } from './client';
+import type { NewBookingRequestEvent } from '@/lib/socket/events';
 
 export type VehicleType =
   | 'mini_truck'
@@ -110,4 +111,6 @@ export const bookingsApi = {
   complete: (id: string) => api<Booking>(`/bookings/${id}/complete`, { method: 'PATCH' }),
 
   getLocations: (id: string) => api<TripLocation[]>(`/bookings/${id}/locations`),
+
+  getAvailable: () => api<NewBookingRequestEvent[]>('/bookings/available'),
 };
