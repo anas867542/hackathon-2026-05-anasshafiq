@@ -63,13 +63,15 @@ src/
 │   └── utils.ts            cn(), formatCurrency, formatRelative
 ```
 
-## Demo accounts (after running `npm run db:seed` in the API)
+## Demo accounts (live on production + after running `npm run db:seed` locally)
 
 | Role     | Email                         | Password      |
 |----------|-------------------------------|---------------|
-| customer | customer@transpolink.dev      | Customer@123  |
-| driver   | driver@transpolink.dev        | Driver@123    |
-| admin    | admin@transpolink.dev         | Admin@123     |
+| admin    | admin@transpolink.dev         | Admin@2025    |
+| customer | customer@transpolink.dev      | Customer@2025 |
+| driver   | driver@transpolink.dev        | Driver@2025   |
+
+> **Tip:** Open two browser windows — one as Customer, one as Driver — to see the live GPS tracking flow end-to-end.
 
 ## Notes
 
