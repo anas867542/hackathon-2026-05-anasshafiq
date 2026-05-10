@@ -31,4 +31,6 @@ COPY --from=builder --chown=appuser:appgroup /app/package.json ./
 USER appuser
 EXPOSE 4000
 
-CMD ["node", "dist/main"]
+# Railway injects PORT at runtime; NestJS reads it via ConfigService.get('PORT', 4000).
+# Run migrations then start — using shell form so the && chain works.
+CMD ["sh", "-c", "npx prisma migrate deploy && node dist/main"]
