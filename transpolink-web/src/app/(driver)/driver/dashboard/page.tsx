@@ -35,12 +35,6 @@ export default function DriverDashboardPage() {
     return () => window.clearInterval(id);
   }, []);
 
-  const [debug, setDebug] = useState<{ lastPoll: string; lastCount: number; lastApiPayload: string }>({
-    lastPoll: '—',
-    lastCount: 0,
-    lastApiPayload: '—',
-  });
-
   const { inbox, mergeItems, remove, markBidSubmitted, winner, clearWinner } = useDriverInbox(token);
 
   useEffect(() => {
@@ -63,26 +57,9 @@ export default function DriverDashboardPage() {
     const fetchAvailable = () =>
       bookingsApi.getAvailable()
         .then((items) => {
-          // If the server returned it, surface it — server-side already enforces the
-          // 4-min freshness window, so we don't need a client-side cutoff. Previously
-          // a client-side cutoff dropped bookings whose expiresAt parsed as past time
-          // (e.g., browser clock skew or unexpected timezone behavior).
           mergeItems(items);
-          setDebug({
-            lastPoll: new Date().toLocaleTimeString(),
-            lastCount: items.length,
-            lastApiPayload: items.length > 0
-              ? items.map((i) => {
-                  const expMs = new Date(i.expiresAt).getTime();
-                  const remaining = Math.round((expMs - Date.now()) / 1000);
-                  return `${i.referenceCode} raw=${i.expiresAt} remaining=${remaining}s passes=${remaining > 10}`;
-                }).join(' | ')
-              : 'empty',
-          });
         })
-        .catch((e) => {
-          setDebug((d) => ({ ...d, lastPoll: `ERROR ${(e as Error).message}` }));
-        });
+        .catch(() => {});
     fetchAvailable();
     const id = window.setInterval(fetchAvailable, 5_000);
     return () => window.clearInterval(id);
@@ -333,15 +310,6 @@ export default function DriverDashboardPage() {
                   </Link>
                 </div>
               </div>
-            </div>
-          )}
-
-          {/* Debug strip — shows real-time poll status so we can see WHY inbox is empty */}
-          {isOnline && (
-            <div className="rounded-xl border border-amber-200 dark:border-amber-900 bg-amber-50 dark:bg-amber-950/40 px-3 py-2 text-[11px] font-mono text-amber-900 dark:text-amber-300 leading-snug">
-              <div>build: v0.1.6 · inbox.length={inbox.length}</div>
-              <div>lastPoll: {debug.lastPoll} · apiReturned={debug.lastCount}</div>
-              <div className="break-all">payload: {debug.lastApiPayload}</div>
             </div>
           )}
 

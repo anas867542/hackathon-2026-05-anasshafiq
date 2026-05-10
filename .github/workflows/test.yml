@@ -1,0 +1,144 @@
+name: Test
+
+on:
+  push:
+    branches: [main, claude/**]
+  pull_request:
+
+jobs:
+  api-e2e:
+    name: API e2e (Jest + Supertest)
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: transpolink_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/transpolink_test
+      JWT_ACCESS_SECRET: ci-test-access-secret-32-bytes-padding-aaaa
+      JWT_REFRESH_SECRET: ci-test-refresh-secret-32-bytes-padding-bbbb
+      JWT_ACCESS_EXPIRES: 15m
+      JWT_REFRESH_EXPIRES: 7d
+      NODE_ENV: test
+      THROTTLE_LIMIT: '100000'
+      WEB_APP_URL: http://localhost:3000
+      CORS_ORIGIN: http://localhost:3000
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: transpolink-api/package-lock.json
+
+      - name: Install dependencies
+        working-directory: transpolink-api
+        run: npm ci
+
+      - name: Apply migrations
+        working-directory: transpolink-api
+        run: npx prisma migrate deploy
+
+      - name: Run e2e tests
+        working-directory: transpolink-api
+        run: npm run test:e2e
+
+  web-e2e:
+    name: Web e2e (Playwright)
+    runs-on: ubuntu-latest
+    needs: api-e2e
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: transpolink_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/transpolink_test
+      JWT_ACCESS_SECRET: ci-test-access-secret-32-bytes-padding-aaaa
+      JWT_REFRESH_SECRET: ci-test-refresh-secret-32-bytes-padding-bbbb
+      JWT_ACCESS_EXPIRES: 15m
+      JWT_REFRESH_EXPIRES: 7d
+      NODE_ENV: test
+      THROTTLE_LIMIT: '100000'
+      WEB_APP_URL: http://localhost:3000
+      CORS_ORIGIN: http://localhost:3000
+      API_URL: http://localhost:4000/api/v1
+      WEB_URL: http://localhost:3000
+      NEXT_PUBLIC_API_URL: http://localhost:4000/api/v1
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install API
+        working-directory: transpolink-api
+        run: npm ci
+
+      - name: Apply migrations
+        working-directory: transpolink-api
+        run: npx prisma migrate deploy
+
+      - name: Build & start API
+        working-directory: transpolink-api
+        run: |
+          npm run build
+          nohup node dist/main &
+          for i in {1..30}; do
+            curl -fsS http://localhost:4000/api/v1/health && break
+            sleep 1
+          done
+
+      - name: Install Web
+        working-directory: transpolink-web
+        run: npm ci
+
+      - name: Install Playwright browsers
+        working-directory: transpolink-web
+        run: npx playwright install --with-deps chromium
+
+      - name: Build & start Web
+        working-directory: transpolink-web
+        run: |
+          npm run build
+          nohup npm start &
+          for i in {1..30}; do
+            curl -fsS http://localhost:3000/ && break
+            sleep 1
+          done
+
+      - name: Run Playwright tests
+        working-directory: transpolink-web
+        env:
+          SKIP_WEBSERVER: '1'
+        run: npm run test:e2e
+
+      - name: Upload report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: transpolink-web/playwright-report
+          retention-days: 7
