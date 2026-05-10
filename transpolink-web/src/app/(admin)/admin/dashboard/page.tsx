@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useAnalytics } from '@/hooks/useAnalytics';
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
 import { MapPlaceholder } from '@/components/dashboard/MapPlaceholder';
 import { Card, CardBody } from '@/components/ui/Card';
@@ -23,11 +24,16 @@ const STATUS_FILTERS: { label: string; value: BookingStatus | undefined }[] = [
 const PAGE_SIZE = 15;
 
 export default function AdminDashboardPage() {
+  const { track } = useAnalytics();
   const [bookings, setBookings] = useState<Booking[] | null>(null);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [statusFilter, setStatus] = useState<BookingStatus | undefined>(undefined);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    track('dashboard_viewed', { section: 'admin_overview' });
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
   const [cancelling, setCancelling] = useState<string | null>(null);
 
   useEffect(() => {

@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { getSocket } from '@/lib/socket/client';
 import { DriverLocationPayload, TrackingEvents } from '@/lib/socket/events';
+import { posthog } from '@/lib/analytics/posthog';
 
 export interface UseDriverTrackingOptions {
   bookingId: string | null;
@@ -167,6 +168,7 @@ export function useDriverTracking({
 
     const timerId = window.setInterval(tick, intervalMs);
     setIsStreaming(true);
+    if (posthog.__loaded) posthog.capture('live_tracking_started', { booking_id: bookingId, role: 'driver' });
 
     return () => {
       window.clearInterval(timerId);

@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { session, SessionUser } from '@/lib/auth/session';
 import { authApi } from '@/lib/api/auth';
+import { useAnalytics } from '@/hooks/useAnalytics';
 
 interface RegisterInput {
   email: string;
@@ -15,10 +16,18 @@ interface RegisterInput {
 export function useAuth() {
   const [user, setUser] = useState<SessionUser | null>(null);
   const [hydrated, setHydrated] = useState(false);
+  const { track, identify, reset } = useAnalytics();
 
   useEffect(() => {
-    setUser(session.getUser());
+    const stored = session.getUser();
+    setUser(stored);
     setHydrated(true);
+
+    // Re-identify on hydration so PostHog links the anonymous pre-login events
+    // to the known user without firing a new login event.
+    if (stored) {
+      identify(stored.id, { email: stored.email, role: stored.role });
+    }
 
     // Same-tab session changes (login, logout, token refresh in this tab)
     const onSameTab = () => setUser(session.getUser());
@@ -41,31 +50,40 @@ export function useAuth() {
       window.removeEventListener('tl:session', onSameTab);
       window.removeEventListener('storage', onOtherTab);
     };
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const login = useCallback(async (email: string, password: string) => {
     const res = await authApi.login(email, password);
     session.set(res);
     setUser(res.user);
+    identify(res.user.id, { email: res.user.email, role: res.user.role });
+    track('user_logged_in', { role: res.user.role });
     return res.user;
-  }, []);
+  }, [identify, track]);
 
   const register = useCallback(async (input: RegisterInput) => {
     const res = await authApi.register(input);
     session.set(res);
     setUser(res.user);
+    identify(res.user.id, { email: res.user.email, role: res.user.role, name: input.fullName, phone: input.phone });
+    track('user_signed_up', { role: res.user.role });
     return res.user;
-  }, []);
+  }, [identify, track]);
 
   const logout = useCallback(async () => {
+    const currentUser = session.getUser();
     try {
       await authApi.logout();
     } catch {
       /* ignore */
     }
+    if (currentUser) {
+      track('user_logged_out', { role: currentUser.role });
+    }
     session.clear();
     setUser(null);
-  }, []);
+    reset();
+  }, [track, reset]);
 
   return {
     user,

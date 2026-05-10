@@ -15,6 +15,7 @@ import { BiddingModule } from './modules/bidding/bidding.module';
 import { TrackingModule } from './modules/tracking/tracking.module';
 import { ReviewsModule } from './modules/reviews/reviews.module';
 import { HealthModule } from './health/health.module';
+import { AnalyticsModule } from './modules/analytics/analytics.module';
 
 @Module({
   imports: [
@@ -35,6 +36,7 @@ import { HealthModule } from './health/health.module';
     TrackingModule,
     ReviewsModule,
     HealthModule,
+    AnalyticsModule,
   ],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })

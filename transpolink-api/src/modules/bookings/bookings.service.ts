@@ -22,6 +22,7 @@ import { AcceptBookingDto } from './dto/accept-booking.dto';
 import { AuthUser } from '../../common/decorators/current-user.decorator';
 import { MatchingService } from './matching.service';
 import { TrackingGateway } from '../tracking/tracking.gateway';
+import { AnalyticsService } from '../analytics/analytics.service';
 
 const BASE_FARE = 200; // PKR
 const PER_KM = 80;
@@ -37,6 +38,7 @@ export class BookingsService {
     private prisma: PrismaService,
     private matching: MatchingService,
     private tracking: TrackingGateway,
+    private analytics: AnalyticsService,
   ) {}
 
   // ============================================================
@@ -81,6 +83,14 @@ export class BookingsService {
     this.dispatchToNearbyDrivers(booking, booking.customer.fullName).catch((e) =>
       this.logger.error(`Dispatch failed for ${booking.id}`, e),
     );
+
+    this.analytics.capture(customerId, 'ride_created', {
+      booking_id:   booking.id,
+      vehicle_type: booking.vehicleType,
+      booking_type: booking.bookingType,
+      distance_km:  Number(booking.distanceKm ?? 0),
+      fare_pkr:     Number(booking.estimatedFare ?? 0),
+    });
 
     return booking;
   }
@@ -461,6 +471,10 @@ export class BookingsService {
     });
 
     this.tracking.emitBookingStatus(booking!.id, BookingStatus.accepted);
+    this.analytics.capture(actor.driverId!, 'driver_assigned', {
+      booking_id:   booking!.id,
+      vehicle_type: booking!.vehicleType,
+    });
     return booking;
   }
 
@@ -506,6 +520,10 @@ export class BookingsService {
     });
 
     this.tracking.emitBookingStatus(id, BookingStatus.completed);
+    this.analytics.capture(actor.driverId!, 'ride_completed', {
+      booking_id: id,
+      fare_pkr:   Number(booking.finalFare ?? booking.estimatedFare ?? 0),
+    });
     return booking;
   }
 

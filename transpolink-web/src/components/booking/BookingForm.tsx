@@ -14,6 +14,7 @@ import { PlaceAutocompleteInput, nominatimReverse } from '@/components/map/Place
 import { bookingsApi, VehicleType } from '@/lib/api/bookings';
 import { ApiError } from '@/lib/api/client';
 import { useNearbyDrivers } from '@/hooks/useNearbyDrivers';
+import { useAnalytics } from '@/hooks/useAnalytics';
 import { formatCurrency } from '@/lib/utils';
 import { cn } from '@/lib/utils';
 
@@ -25,6 +26,7 @@ function hasCoord(p: Place) { return p.lat !== 0 || p.lng !== 0; }
 
 export function BookingForm() {
   const router = useRouter();
+  const { track } = useAnalytics();
   const [pickup,  setPickup]  = useState<Place>(EMPTY);
   const [dropoff, setDropoff] = useState<Place>(EMPTY);
   const [detectingLocation, setDetectingLocation] = useState(true);
@@ -65,7 +67,8 @@ export function BookingForm() {
   const handleRoute = useCallback((info: RouteInfo) => {
     setRoute(info);
     if (!info.fallback) setRouteWarning(null);
-  }, []);
+    track('route_loaded', { distance_km: info.distanceKm, duration_minutes: info.durationMinutes });
+  }, [track]);
 
   const handleRouteError = useCallback((status: string) => {
     const msgs: Record<string, string> = {
@@ -77,10 +80,12 @@ export function BookingForm() {
 
   const handlePickupChange = useCallback((place: Place) => {
     setPickup(place); setPinMode(null); setRoute(null);
-  }, []);
+    if (place.address) track('location_selected', { type: 'pickup' });
+  }, [track]);
   const handleDropoffChange = useCallback((place: Place) => {
     setDropoff(place); setPinMode(null); setRoute(null);
-  }, []);
+    if (place.address) track('location_selected', { type: 'dropoff' });
+  }, [track]);
 
   const nearbyDrivers = useNearbyDrivers(
     pickup.lat || null,
@@ -113,6 +118,12 @@ export function BookingForm() {
         goodsDescription: goodsDescription.trim() || undefined,
         estimatedWeightKg: estimatedWeightKg ? Number(estimatedWeightKg) : undefined,
         bookingType,
+      });
+      track('ride_requested', {
+        vehicle_type:  vehicleType,
+        booking_type:  bookingType,
+        distance_km:   route?.distanceKm ?? 0,
+        fare_pkr:      estimatedFare ?? 0,
       });
       router.push(`/book/${booking.id}`);
     } catch (err) {
@@ -262,7 +273,13 @@ export function BookingForm() {
           size="lg"
           className="w-full"
           disabled={!vehicleType}
-          onClick={() => { setShowVehicleSheet(false); setShowConfirmSheet(true); }}
+          onClick={() => {
+            setShowVehicleSheet(false);
+            setShowConfirmSheet(true);
+            if (vehicleType && route && estimatedFare != null) {
+              track('fare_viewed', { vehicle_type: vehicleType, distance_km: route.distanceKm, fare_pkr: estimatedFare });
+            }
+          }}
         >
           Continue →
         </Button>

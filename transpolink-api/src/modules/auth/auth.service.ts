@@ -9,6 +9,7 @@ import { UserRole, UserStatus } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 import * as crypto from 'crypto';
 import { PrismaService } from '../../prisma/prisma.service';
+import { AnalyticsService } from '../analytics/analytics.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { GoogleProfile } from './strategies/google.strategy';
@@ -31,6 +32,7 @@ export class AuthService {
     private prisma: PrismaService,
     private jwt: JwtService,
     private config: ConfigService,
+    private analytics: AnalyticsService,
   ) {}
 
   async register(dto: RegisterDto) {
@@ -64,7 +66,10 @@ export class AuthService {
       include: { driver: { select: { id: true } } },
     });
 
-    return this.issueTokens(user.id, user.email, user.role, user.driver?.id ?? null);
+    const tokens = await this.issueTokens(user.id, user.email, user.role, user.driver?.id ?? null);
+    this.analytics.identify(user.id, { email: user.email, role: user.role, name: user.fullName });
+    this.analytics.capture(user.id, 'user_signed_up', { role: user.role });
+    return tokens;
   }
 
   async login(dto: LoginDto) {
@@ -108,7 +113,9 @@ export class AuthService {
       data: { lastLoginAt: new Date() },
     });
 
-    return this.issueTokens(user.id, user.email, user.role, user.driver?.id ?? null);
+    const tokens = await this.issueTokens(user.id, user.email, user.role, user.driver?.id ?? null);
+    this.analytics.capture(user.id, 'user_logged_in', { role: user.role });
+    return tokens;
   }
 
   async refresh(refreshToken: string) {
@@ -190,7 +197,11 @@ export class AuthService {
       });
     }
 
-    return this.issueTokens(user.id, user.email, user.role, user.driver?.id ?? null);
+    const isNewUser = !user.googleId || !user.lastLoginAt;
+    const tokens = await this.issueTokens(user.id, user.email, user.role, user.driver?.id ?? null);
+    this.analytics.identify(user.id, { email: user.email, role: user.role, name: user.fullName });
+    this.analytics.capture(user.id, isNewUser ? 'user_signed_up' : 'user_logged_in', { role: user.role, provider: 'google' });
+    return tokens;
   }
 
   async logout(userId: string) {
