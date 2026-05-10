@@ -9,12 +9,14 @@
 
 ## Log
 
-| Day | Date | Spend (USD) | Sessions | Hours coding | $/hour | Notes |
-|---|---|---|---|---|---|---|
-| Day 1 | Thu May 7 | $0.28 | 1 | ~4 h | ~$0.07 | TrackingMap OSRM fix, GPS accuracy fix, Nominatim migration, rating modal flicker, workshop pack |
-| Day 2 | Fri May 8 |  |  |  |  |  |
-| Day 3 | Sat May 9 |  |  |  |  |  |
-| **Total** | | **$0.28** | | | | |
+| Day | Date | Spend (USD) | Output tokens | Cache read tokens | Notes |
+|---|---|---|---|---|---|
+| Day 1 | Thu May 7 | $58.26 | 1,091,612 | 88M | TrackingMap OSRM fix, GPS accuracy, Nominatim migration, rating modal, test suite phase 1-2, QA fixes |
+| Day 2 | Fri May 8 | $40.80 | 839,261 | 69M | Test suite phase 3-4, e2e green (42/42), Google OAuth, bug fixes |
+| Day 3 | Sat May 9 | $86.13 | 1,564,421 | 163M | PostHog analytics integration (20 events), Railway deployment debugging, docs (ARCHITECTURE, TECHNICAL_DECISIONS, ROADMAP) |
+| *(overlap)* | May 6 UTC / May 7 PKT | $53.03 | 853,687 | 105M | Early sessions (design, scaffolding, initial build) |
+| *(overlap)* | May 10 UTC / May 9 PKT | $34.05 | 331,077 | 76M | Late sessions (deployment fixes, credential docs) |
+| **Total** | **May 7–9** | **~$272** | **4,679,058** | **501M** | Timestamps UTC; Pakistan = UTC+5 |
 
 ---
 
