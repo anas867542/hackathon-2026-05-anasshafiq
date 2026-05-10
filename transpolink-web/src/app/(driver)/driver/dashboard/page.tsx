@@ -12,6 +12,7 @@ import { driversApi, DriverProfile } from '@/lib/api/drivers';
 import { bookingsApi, Booking } from '@/lib/api/bookings';
 import { useDriverInbox, InboxItem } from '@/hooks/useDriverInbox';
 import { useAuth } from '@/hooks/useAuth';
+import { useAnalytics } from '@/hooks/useAnalytics';
 import { session } from '@/lib/auth/session';
 import { formatCurrency } from '@/lib/utils';
 import { ApiError } from '@/lib/api/client';
@@ -19,6 +20,7 @@ import { ApiError } from '@/lib/api/client';
 export default function DriverDashboardPage() {
   const router = useRouter();
   const { hydrated } = useAuth();
+  const { track } = useAnalytics();
   const token = hydrated ? session.getAccessToken() : null;
 
   const [profile,       setProfile]       = useState<DriverProfile | null>(null);
@@ -110,6 +112,7 @@ export default function DriverDashboardPage() {
         currentLat: (lat ?? profile.currentLat) as DriverProfile['currentLat'],
         currentLng: (lng ?? profile.currentLng) as DriverProfile['currentLng'],
       });
+      track(goingOnline ? 'driver_online' : 'driver_offline', {});
     } catch (e) {
       setError(e instanceof ApiError ? e.message : (e as Error).message);
     } finally {
@@ -142,6 +145,7 @@ export default function DriverDashboardPage() {
       const booking = await bookingsApi.accept(bookingId, truckId);
       remove(bookingId);
       setActive(booking);
+      track('request_accepted', { booking_id: bookingId, vehicle_type: booking.vehicleType ?? '' });
       router.push(`/driver/trip/${booking.id}`);
     } catch (e) {
       setError(e instanceof ApiError ? e.message : 'Failed to accept');
@@ -288,7 +292,10 @@ export default function DriverDashboardPage() {
                     <Button size="sm" variant="brand" isLoading={busy}
                       onClick={async () => {
                         setBusy(true);
-                        try { setActive(await bookingsApi.start(active.id)); }
+                        try {
+                          setActive(await bookingsApi.start(active.id));
+                          track('trip_started', { booking_id: active.id });
+                        }
                         catch (e) { setError(e instanceof Error ? e.message : 'Failed to start trip'); }
                         finally { setBusy(false); }
                       }}>
@@ -299,7 +306,11 @@ export default function DriverDashboardPage() {
                     <Button size="sm" variant="brand" isLoading={busy}
                       onClick={async () => {
                         setBusy(true);
-                        try { await bookingsApi.complete(active.id); router.push('/driver/dashboard'); }
+                        try {
+                          await bookingsApi.complete(active.id);
+                          track('trip_completed', { booking_id: active.id });
+                          router.push('/driver/dashboard');
+                        }
                         catch (e) { setError(e instanceof Error ? e.message : 'Failed to complete trip'); setBusy(false); }
                       }}>
                       Complete trip
@@ -424,7 +435,7 @@ export default function DriverDashboardPage() {
                           ) : (
                             <div className="flex gap-2">
                               {isBidding ? (
-                                <Button size="md" variant="brand" className="flex-1" onClick={() => setBidTarget(o)}>
+                                <Button size="md" variant="brand" className="flex-1" onClick={() => { track('request_received', { booking_id: o.bookingId, booking_type: o.bookingType ?? 'bidding' }); setBidTarget(o); }}>
                                   Submit offer
                                 </Button>
                               ) : (
@@ -433,7 +444,7 @@ export default function DriverDashboardPage() {
                                   Accept
                                 </Button>
                               )}
-                              <Button size="md" variant="secondary" onClick={() => remove(o.bookingId)}>
+                              <Button size="md" variant="secondary" onClick={() => { track('request_skipped', { booking_id: o.bookingId }); remove(o.bookingId); }}>
                                 Skip
                               </Button>
                             </div>
@@ -498,7 +509,11 @@ export default function DriverDashboardPage() {
         <SubmitBidModal
           request={bidTarget}
           onClose={() => setBidTarget(null)}
-          onSubmitted={() => { markBidSubmitted(bidTarget.bookingId); setBidTarget(null); }}
+          onSubmitted={(amountPkr: number) => {
+            track('bid_submitted', { booking_id: bidTarget.bookingId, amount_pkr: amountPkr });
+            markBidSubmitted(bidTarget.bookingId);
+            setBidTarget(null);
+          }}
         />
       )}
     </div>

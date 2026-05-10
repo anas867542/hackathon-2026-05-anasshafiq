@@ -1,8 +1,10 @@
 import type { Metadata, Viewport } from 'next';
 import { Inter } from 'next/font/google';
+import { Suspense } from 'react';
 import './globals.css';
 import { PwaRegistration } from '@/components/PwaRegistration';
 import { ThemeProvider } from '@/components/providers/ThemeProvider';
+import { PostHogProvider } from '@/components/providers/PostHogProvider';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -36,8 +38,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en" className={inter.variable} suppressHydrationWarning>
       <body className="font-sans antialiased">
         <ThemeProvider>
-          {children}
-          <PwaRegistration />
+          <Suspense>
+            <PostHogProvider>
+              {children}
+              <PwaRegistration />
+            </PostHogProvider>
+          </Suspense>
         </ThemeProvider>
       </body>
     </html>

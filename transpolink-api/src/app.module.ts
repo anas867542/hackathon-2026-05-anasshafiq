@@ -15,6 +15,7 @@ import { BiddingModule } from './modules/bidding/bidding.module';
 import { TrackingModule } from './modules/tracking/tracking.module';
 import { ReviewsModule } from './modules/reviews/reviews.module';
 import { HealthModule } from './health/health.module';
+import { AnalyticsModule } from './modules/analytics/analytics.module';
 
 const THROTTLE_LIMIT =
   process.env.NODE_ENV === 'test'
@@ -40,6 +41,7 @@ const THROTTLE_LIMIT =
     TrackingModule,
     ReviewsModule,
     HealthModule,
+    AnalyticsModule,
   ],
   providers:
     process.env.NODE_ENV === 'test'

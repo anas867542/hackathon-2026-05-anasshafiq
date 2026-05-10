@@ -10,7 +10,7 @@ import type { NewBookingRequestEvent } from '@/lib/socket/events';
 
 interface Props {
   request: NewBookingRequestEvent;
-  onSubmitted: () => void;
+  onSubmitted: (amountPkr: number) => void;
   onClose: () => void;
 }
 
@@ -35,7 +35,7 @@ export function SubmitBidModal({ request, onSubmitted, onClose }: Props) {
         etaMinutes: etaMinutes ? Number(etaMinutes) : undefined,
         message: message.trim() || undefined,
       });
-      onSubmitted();
+      onSubmitted(amount);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Failed to submit bid');
     } finally {
