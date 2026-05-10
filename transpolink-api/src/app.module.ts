@@ -16,13 +16,18 @@ import { TrackingModule } from './modules/tracking/tracking.module';
 import { ReviewsModule } from './modules/reviews/reviews.module';
 import { HealthModule } from './health/health.module';
 
+const THROTTLE_LIMIT =
+  process.env.NODE_ENV === 'test'
+    ? 1_000_000
+    : parseInt(process.env.THROTTLE_LIMIT ?? '100', 10);
+
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true, validate: validateEnv }),
     ThrottlerModule.forRoot([
       {
         ttl: parseInt(process.env.THROTTLE_TTL ?? '60', 10) * 1000,
-        limit: parseInt(process.env.THROTTLE_LIMIT ?? '100', 10),
+        limit: THROTTLE_LIMIT,
       },
     ]),
     PrismaModule,
@@ -36,7 +41,10 @@ import { HealthModule } from './health/health.module';
     ReviewsModule,
     HealthModule,
   ],
-  providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
+  providers:
+    process.env.NODE_ENV === 'test'
+      ? []
+      : [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {

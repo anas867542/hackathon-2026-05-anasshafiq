@@ -25,9 +25,10 @@ jobs:
 
     env:
       DATABASE_URL: postgresql://postgres:postgres@localhost:5432/transpolink_test
-      JWT_SECRET: ci-test-secret-32-bytes-long-padded
-      JWT_EXPIRES_IN: 15m
-      REFRESH_EXPIRES_IN: 7d
+      JWT_ACCESS_SECRET: ci-test-access-secret-32-bytes-padding-aaaa
+      JWT_REFRESH_SECRET: ci-test-refresh-secret-32-bytes-padding-bbbb
+      JWT_ACCESS_EXPIRES: 15m
+      JWT_REFRESH_EXPIRES: 7d
       NODE_ENV: test
       THROTTLE_LIMIT: '100000'
       WEB_APP_URL: http://localhost:3000
@@ -73,9 +74,10 @@ jobs:
 
     env:
       DATABASE_URL: postgresql://postgres:postgres@localhost:5432/transpolink_test
-      JWT_SECRET: ci-test-secret-32-bytes-long-padded
-      JWT_EXPIRES_IN: 15m
-      REFRESH_EXPIRES_IN: 7d
+      JWT_ACCESS_SECRET: ci-test-access-secret-32-bytes-padding-aaaa
+      JWT_REFRESH_SECRET: ci-test-refresh-secret-32-bytes-padding-bbbb
+      JWT_ACCESS_EXPIRES: 15m
+      JWT_REFRESH_EXPIRES: 7d
       NODE_ENV: test
       THROTTLE_LIMIT: '100000'
       WEB_APP_URL: http://localhost:3000

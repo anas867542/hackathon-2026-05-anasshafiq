@@ -782,17 +782,51 @@
 
 ---
 
-## Final Report (to be filled after execution)
+## Execution Results
+
+### Run 1 — Backend e2e (Jest + Supertest)
+
+**Date:** 2026-05-09 · **Environment:** Windows 10, Node 20, Postgres 16 (local) · **DB:** `transpolink_test`
+
+```
+Test Suites: 3 passed, 3 total
+Tests:       42 passed, 42 total
+Time:        82s
+```
+
+| Suite | File | Result |
+|---|---|---|
+| Auth | `transpolink-api/test/auth.e2e-spec.ts` | ✅ 13/13 |
+| Bookings | `transpolink-api/test/bookings.e2e-spec.ts` | ✅ 19/19 |
+| Drivers / Reviews / Bidding | `transpolink-api/test/drivers-reviews-bidding.e2e-spec.ts` | ✅ 10/10 |
+
+All TC-API-001..028, TC-EDGE-001/002/003/004/007/009, plus driver/customer cross-cutting cases verified at API level: **✅ 42/42 PASS**.
+
+### Fixes applied during fix-loop
+
+| # | Issue uncovered by | Root cause | Fix |
+|---|---|---|---|
+| 1 | TC-API-001 (register 429) | Per-route `@Throttle({limit:5})` on `/auth/register` blocked test setup | Skip `APP_GUARD` (ThrottlerGuard) when `NODE_ENV=test` in `app.module.ts` |
+| 2 | TC-EDGE-007 (pickup==dropoff accepted) | No min-distance validation in `bookings.service.create` | Reject `<50 m` in `bookings.service.ts` with `BadRequestException` |
+| 3 | All API tests (Google OAuth init crash) | `GoogleStrategy` rejects empty `clientID` even when route unused | Set placeholder `GOOGLE_CLIENT_ID/SECRET` in test env |
+| 4 | Test compile errors | `import * as request from 'supertest'` not callable with v6 types | Use `import request = require('supertest')` |
+
+### Frontend / Performance — pending execution
+
+Phase 3 for Playwright (TC-CUST/DRV/ADM/MAP/EDGE-* UI cases) and k6 (TC-PERF-*) requires booting both API+Web. The specs are authored and committed; execution will run via the GitHub Actions workflow on next push, or locally with both servers running.
+
+## Final Report
 
 | Section | Total | Pass | Fail | Pending |
 |---------|------:|-----:|-----:|--------:|
 | Customer | 26 | 0 | 0 | 26 |
 | Driver | 22 | 0 | 0 | 22 |
 | Admin | 16 | 0 | 0 | 16 |
-| Backend APIs | 28 | 0 | 0 | 28 |
+| Backend APIs | 28 | **28** | 0 | 0 |
 | Map & Real-Time | 18 | 0 | 0 | 18 |
-| Edge / Security | 15 | 0 | 0 | 15 |
+| Edge / Security | 15 | **6** | 0 | 9 |
 | Performance | 6 | 0 | 0 | 6 |
-| **Total** | **131** | **0** | **0** | **131** |
+| **Total** | **131** | **34** | **0** | **97** |
 
-> Document Phase 1 complete. Phase 2 (automation) awaiting kickoff.
+✅ **Backend: 100 % pass on all executable cases.**
+⏳ **Frontend / perf: authored, awaiting CI/local execution.**

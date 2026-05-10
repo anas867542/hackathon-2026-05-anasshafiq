@@ -9,7 +9,6 @@
   "moduleNameMapper": {
     "^src/(.*)$": "<rootDir>/../src/$1"
   },
-  "setupFilesAfterEach": ["<rootDir>/setup.ts"],
   "testTimeout": 30000,
   "maxWorkers": 1
 }

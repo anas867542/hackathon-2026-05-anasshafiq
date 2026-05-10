@@ -51,6 +51,9 @@ export class BookingsService {
       dto.pickup.lat, dto.pickup.lng,
       dto.dropoff.lat, dto.dropoff.lng,
     );
+    if (distanceKm < 0.05) {
+      throw new BadRequestException('Pickup and dropoff must be at least 50 m apart');
+    }
     const durationMinutes = Math.round(distanceKm * 2);
     const estimatedFare = Math.round(BASE_FARE + distanceKm * PER_KM + durationMinutes * PER_MIN);
 
