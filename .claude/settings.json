@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(curl -s -X POST https://backboard.railway.com/graphql/v2 *)",
+      "Bash(curl -s https://transpolink-api-production.up.railway.app *)",
+      "Bash(curl -s https://transpolink-web-production.up.railway.app *)"
+    ]
+  }
+}
